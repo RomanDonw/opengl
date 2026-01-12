@@ -274,8 +274,10 @@ class Camera
 
 int initOpenGL(GLFWwindow **window);
 
-const unsigned int SCREEN_WIDTH = 800;
-const unsigned int SCREEN_HEIGHT = 600;
+const unsigned int SCREEN_WIDTH = 1200;
+const unsigned int SCREEN_HEIGHT = 700;
+const unsigned int FPS = 60;
+const float MOUSE_SENSITIVITY = 0.1;
 
 int main()
 {
@@ -303,47 +305,53 @@ int main()
 
     float lastX = SCREEN_WIDTH / 2, lastY = SCREEN_HEIGHT / 2;
 
+    double prev_time = glfwGetTime();
     while (!glfwWindowShouldClose(window))
     {
+        double delta = glfwGetTime() - prev_time;
         if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) glfwSetWindowShouldClose(window, true);
+        if (delta >= 1.0f / FPS)
+        {
+            prev_time = glfwGetTime();
 
-        if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) cam.SetPosition(cam.GetPosition() + cam.GetFront() * glm::vec3(0.001, 0.001, 0.001));
-        if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) cam.SetPosition(cam.GetPosition() - cam.GetFront() * glm::vec3(0.001, 0.001, 0.001));
-        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) cam.SetPosition(cam.GetPosition() - cam.GetRight() * glm::vec3(0.001, 0.001, 0.001));
-        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) cam.SetPosition(cam.GetPosition() + cam.GetRight() * glm::vec3(0.001, 0.001, 0.001));
+            // ===== CONTROLS =====
 
-        double mouseX, mouseY;
-        glfwGetCursorPos(window, &mouseX, &mouseY);
-        float xoffset = mouseX - lastX;
-        float yoffset = lastY - mouseY;
-        lastX = mouseX;
-        lastY = mouseY;
+            if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) cam.SetPosition(cam.GetPosition() + cam.GetFront() * glm::vec3(3.0 * delta));
+            if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) cam.SetPosition(cam.GetPosition() - cam.GetFront() * glm::vec3(3.0 * delta));
+            if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) cam.SetPosition(cam.GetPosition() - cam.GetRight() * glm::vec3(3.0 * delta));
+            if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) cam.SetPosition(cam.GetPosition() + cam.GetRight() * glm::vec3(3.0 * delta));
 
-        float sensitivity = 0.1f;
-        xoffset *= sensitivity;
-        yoffset *= sensitivity;
+            double mouseX, mouseY;
+            glfwGetCursorPos(window, &mouseX, &mouseY);
 
-        glm::vec3 r = cam.GetRotation();
+            glm::vec3 r = cam.GetRotation();
 
-        r.y -= glm::radians(xoffset);
-        r.x += glm::radians(yoffset);
+            r.y -= glm::radians((mouseX - lastX) * MOUSE_SENSITIVITY);
+            r.x -= glm::radians((mouseY - lastY) * MOUSE_SENSITIVITY);
+            if (glm::degrees(r.x) > 89.0f) r.x = glm::radians(89.0f);
+            if (glm::degrees(r.x) < -89.0f) r.x = glm::radians(-89.0f);
+            r.y = fmod(r.y, 360);
 
-        //if (glm::degrees(r.x) > 89.0f) r.x = glm::radians(89.0f);
-        //if (glm::degrees(r.x) < -89.0f) r.x = glm::radians(-89.0f);
+            cam.SetRotation(r);
 
-        cam.SetRotation(r);
-        
-        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+            lastX = mouseX;
+            lastY = mouseY;
 
-        //e.SetRotation(e.GetRotation() + glm::vec3(0, 0, glm::radians(0.1f)));
+            // ===== MAIN =====
+            
+            glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT);
 
-        glm::mat4 view = cam.GetViewMatrix();
-        glm::mat4 proj = cam.GetProjectionMatrix(SCREEN_WIDTH, SCREEN_HEIGHT);
-        e.render(&sp, &view, &proj);
-        
-        // Обмен буферов
-        glfwSwapBuffers(window);
+            //e.SetRotation(e.GetRotation() + glm::vec3(0, 0, glm::radians(0.1f)));
+
+            glm::mat4 view = cam.GetViewMatrix();
+            glm::mat4 proj = cam.GetProjectionMatrix(SCREEN_WIDTH, SCREEN_HEIGHT);
+            e.render(&sp, &view, &proj);
+            
+            // Обмен буферов
+            glfwSwapBuffers(window);
+
+        }
         glfwPollEvents();
     }
     
