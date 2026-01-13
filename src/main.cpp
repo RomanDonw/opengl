@@ -4,8 +4,14 @@
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+
+#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/scalar_multiplication.hpp>
+
+#include <bullet/btBulletCollisionCommon.h>
+#include <bullet/btBulletDynamicsCommon.h>
 
 // Шейдеры
 const char* vertexShaderSource = R"(
@@ -278,6 +284,7 @@ const unsigned int SCREEN_WIDTH = 1200;
 const unsigned int SCREEN_HEIGHT = 700;
 const unsigned int FPS = 60;
 const float MOUSE_SENSITIVITY = 0.1;
+const float GRAVITY = 9.80665f;
 
 int main()
 {
@@ -305,10 +312,15 @@ int main()
 
     float lastX = SCREEN_WIDTH / 2, lastY = SCREEN_HEIGHT / 2;
 
+    glm::vec3 vel = glm::vec3(0.0f);
+    float mass = 1;
+
     double prev_time = glfwGetTime();
+    double start_time = prev_time;
     while (!glfwWindowShouldClose(window))
     {
         double delta = glfwGetTime() - prev_time;
+        double elapsed_time = glfwGetTime() - start_time;
         if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) glfwSetWindowShouldClose(window, true);
         if (delta >= 1.0f / FPS)
         {
@@ -343,6 +355,15 @@ int main()
             glClear(GL_COLOR_BUFFER_BIT);
 
             //e.SetRotation(e.GetRotation() + glm::vec3(0, 0, glm::radians(0.1f)));
+            glm::vec3 force = glm::vec3(0.0f);
+            if (elapsed_time >= 5.0f && elapsed_time <= 10.0f) force += glm::vec3(0, 0, -1.0f);
+
+            if (glm::length(vel) > 0.0f) force += -glm::normalize(vel) * 0.05f * mass * GRAVITY;
+
+            glm::vec3 acc = force / mass;
+            vel += acc * delta;
+            e.SetPosition(e.GetPosition() + vel * delta);
+            std::cout << e.GetPosition().x << " " << e.GetPosition().y << " " << e.GetPosition().z << std::endl;
 
             glm::mat4 view = cam.GetViewMatrix();
             glm::mat4 proj = cam.GetProjectionMatrix(SCREEN_WIDTH, SCREEN_HEIGHT);
