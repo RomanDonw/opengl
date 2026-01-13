@@ -11,7 +11,12 @@ ar rcs %LIB%\libglad.a %LIB%\glad.o
 del %LIB%\glad.o
 
 echo Building main...
-g++ -static -I%INCLUDE% -L%LIB% %SRC%\main.cpp -o .\main.exe -lglad -lglfw3 -lopengl32 -lgdi32
+rem g++ -static -I%INCLUDE% -L%LIB% %SRC%\main.cpp -o .\main.exe -lglad -lglfw3 -lopengl32 -lgdi32
+g++ -c -I%INCLUDE% -L%LIB% %SRC%\main.cpp -o main.o
+echo Linking main...
+g++ -I%INCLUDE% -L%LIB% ./main.o %LIB%\libglad.a %LIB%\libglfw3.a -lopengl32 -lgdi32 -llibpng16 -o ./main.exe
+del main.o
 
 rem copy %LIB%\glfw3.dll .
 rem copy %LIB%\glad.dll .
+copy %LIB%\libpng16.dll .

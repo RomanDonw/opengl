@@ -1,11 +1,14 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <cstdio>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
+
+#include <libpng16/png.h>
 
 // Шейдеры
 const char* vertexShaderSource = R"(
@@ -105,6 +108,72 @@ class Mesh
 
     inline std::vector<float> GetVertices() { return vertices; }
     inline std::vector<unsigned int> GetIndices() { return indices; }
+};
+
+class Texture
+{
+  private:
+    GLuint texture = 0;
+
+  public:
+    Texture() {}
+    ~Texture() { DeleteTexture(); }
+
+    inline bool HasTexture() { return glIsTexture(texture) == GL_TRUE; }
+    inline GLuint GetTexture() { return texture; }
+
+    bool DeleteTexture()
+    {
+        if (!HasTexture()) return false;
+        glDeleteTextures(1, &texture);
+        texture = 0;
+        return true;
+    }
+
+    void LoadFromPNGFile(std::string filename)
+    {
+        FILE *f = fopen(filename.c_str(), "rb");
+        if (!f) throw std::runtime_error("Can't open texture file \"" + filename + "\".");
+
+        png_byte header[8];
+        fread(header, 1, 8, f);
+        if (png_sig_cmp(header, 0, 8)) throw std::runtime_error("File \"" + filename + "\" isn't PNG file.");
+
+        png_structp png = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+        png_infop info = png_create_info_struct(png);
+        
+        png_init_io(png, f);
+        png_set_sig_bytes(png, 8);
+        png_read_info(png, info);
+
+        int width = png_get_image_width(png, info);
+        int height = png_get_image_height(png, info);
+        png_byte color_type = png_get_color_type(png, info);
+        png_byte bit_depth = png_get_bit_depth(png, info);
+
+        if (bit_depth == 16) png_set_strip_16(png);
+        if (color_type == PNG_COLOR_TYPE_PALETTE) png_set_palette_to_rgb(png);
+        if (color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8) png_set_expand_gray_1_2_4_to_8(png);
+        if (png_get_valid(png, info, PNG_INFO_tRNS)) png_set_tRNS_to_alpha(png);
+        if (color_type == PNG_COLOR_TYPE_RGB || color_type == PNG_COLOR_TYPE_GRAY) png_set_filler(png, 0xFF, PNG_FILLER_AFTER);
+        
+        png_read_update_info(png, info);
+
+        std::vector<png_byte> pixels(width * height * 4);
+        std::vector<png_bytep> row_pointers(height);
+        for (int y = 0; y < height; y++) row_pointers[y] = &pixels[y * width * 4];
+        
+        png_read_image(png, row_pointers.data());
+        png_destroy_read_struct(&png, &info, NULL);
+        fclose(f);
+
+        DeleteTexture();
+
+        glGenTextures(1, &texture);
+        glBindTexture(GL_TEXTURE_2D, texture);
+        
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+    }
 };
 
 class Entity
