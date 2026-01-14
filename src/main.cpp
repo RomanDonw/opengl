@@ -102,17 +102,20 @@ class Mesh
     inline void ClearIndices() { indices.clear(); }
     inline void ClearMesh() { ClearVertices(); ClearIndices(); }
 
-    void AddVertex(float x, float y, float z)
+    /*void AddVertex(float x, float y, float z)
     {
         vertices.push_back(x);
         vertices.push_back(y);
         vertices.push_back(z);
     }
-    inline void AddVertex(glm::vec3 vertex) { AddVertex(vertex.x, vertex.y, vertex.z); }
+    inline void AddVertex(glm::vec3 vertex) { AddVertex(vertex.x, vertex.y, vertex.z); }*/
 
     void AddVertexWithUV(float x, float y, float z, float u, float v)
     {
-        AddVertex(x, y, z);
+        vertices.push_back(x);
+        vertices.push_back(y);
+        vertices.push_back(z);
+
         uvs.push_back(u);
         uvs.push_back(v);
     }
@@ -209,7 +212,7 @@ class Texture
                     if (!(y % 8)) texmiss_y = !texmiss_y;
                 }
 
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA8, GL_UNSIGNED_BYTE, pixels.data());
                 break;
 
             // case 1: // RGB type.
