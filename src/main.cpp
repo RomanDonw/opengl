@@ -1,20 +1,24 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <fstream>
 #include <cstdio>
+#include <filesystem>
+#include <cstdint>
+#include <cstring>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include <libpng16/png.h>
-
-// Шейдеры
 const char* vertexShaderSource = R"(
 #version 330 core
 
 layout (location = 0) in vec3 aPos;
+layout (location = 1) in vec2 aTexCoord;
+
+out vec2 TexCoord;
 
 uniform mat4 model;
 uniform mat4 view;
@@ -23,15 +27,22 @@ uniform mat4 projection;
 void main()
 {
    gl_Position = projection * view * model * vec4(aPos, 1.0);
+   TexCoord = aTexCoord;
 }
 )";
 
 const char* fragmentShaderSource = R"(
 #version 330 core
+
+in vec2 TexCoord;
 out vec4 FragColor;
+
+uniform sampler2D texture;
+
 void main()
 {
-    FragColor = vec4(0.2f, 0.5f, 0.8f, 1.0f);
+    //FragColor = vec4(0.2f, 0.5f, 0.8f, 1.0f);
+    FragColor = texture2D(texture, TexCoord);
 }
 )";
 
@@ -75,12 +86,14 @@ class Mesh
   private:
     std::vector<float> vertices;
     std::vector<unsigned int> indices;
+    std::vector<float> uvs;
 
   public:
-    Mesh(std::vector<float> _vertices, std::vector<unsigned int> _indices)
+    Mesh(std::vector<float> _vertices, std::vector<unsigned int> _indices, std::vector<float> _uvs)
     {
         vertices = _vertices;
         indices = _indices;
+        uvs = _uvs;
     }
 
     Mesh() {}
@@ -97,6 +110,14 @@ class Mesh
     }
     inline void AddVertex(glm::vec3 vertex) { AddVertex(vertex.x, vertex.y, vertex.z); }
 
+    void AddVertexWithUV(float x, float y, float z, float u, float v)
+    {
+        AddVertex(x, y, z);
+        uvs.push_back(u);
+        uvs.push_back(v);
+    }
+    inline void AddVertexWithUV(glm::vec3 vertex, glm::vec2 uv) { AddVertexWithUV(vertex.x, vertex.y, vertex.z, uv.x, uv.y); }
+
     void AddTriangle(unsigned int v0, unsigned int v1, unsigned int v2)
     {
         indices.push_back(v0);
@@ -108,6 +129,7 @@ class Mesh
 
     inline std::vector<float> GetVertices() { return vertices; }
     inline std::vector<unsigned int> GetIndices() { return indices; }
+    inline std::vector<float> GetUVs() { return uvs; }
 };
 
 class Texture
@@ -130,49 +152,78 @@ class Texture
         return true;
     }
 
-    void LoadFromPNGFile(std::string filename)
+    bool LoadFromUCTEXFile(std::string filename)
     {
+        if (!std::filesystem::is_regular_file(filename)) return false;
+
         FILE *f = fopen(filename.c_str(), "rb");
-        if (!f) throw std::runtime_error("Can't open texture file \"" + filename + "\".");
+        if (!f) return false;
 
-        png_byte header[8];
-        fread(header, 1, 8, f);
-        if (png_sig_cmp(header, 0, 8)) throw std::runtime_error("File \"" + filename + "\" isn't PNG file.");
+        char sig[5];
+        fread(&sig, sizeof(char), 5, f);
+        if (feof(f) || strncmp(sig, "UCTEX", 5)) { fclose(f); return false; }
 
-        png_structp png = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
-        png_infop info = png_create_info_struct(png);
-        
-        png_init_io(png, f);
-        png_set_sig_bytes(png, 8);
-        png_read_info(png, info);
+        uint16_t version;
+        fread(&version, sizeof(uint16_t), 1, f);
+        if (feof(f) || version != 0) { fclose(f); return false; }
 
-        int width = png_get_image_width(png, info);
-        int height = png_get_image_height(png, info);
-        png_byte color_type = png_get_color_type(png, info);
-        png_byte bit_depth = png_get_bit_depth(png, info);
+        uint8_t type;
+        fread(&type, sizeof(uint8_t), 1, f);
+        if (feof(f) || type > 0) { fclose(f); return false; }
 
-        if (bit_depth == 16) png_set_strip_16(png);
-        if (color_type == PNG_COLOR_TYPE_PALETTE) png_set_palette_to_rgb(png);
-        if (color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8) png_set_expand_gray_1_2_4_to_8(png);
-        if (png_get_valid(png, info, PNG_INFO_tRNS)) png_set_tRNS_to_alpha(png);
-        if (color_type == PNG_COLOR_TYPE_RGB || color_type == PNG_COLOR_TYPE_GRAY) png_set_filler(png, 0xFF, PNG_FILLER_AFTER);
-        
-        png_read_update_info(png, info);
-
-        std::vector<png_byte> pixels(width * height * 4);
-        std::vector<png_bytep> row_pointers(height);
-        for (int y = 0; y < height; y++) row_pointers[y] = &pixels[y * width * 4];
-        
-        png_read_image(png, row_pointers.data());
-        png_destroy_read_struct(&png, &info, NULL);
-        fclose(f);
+        uint16_t width16, height16;
+        fread(&width16, sizeof(uint16_t), 1, f);
+        fread(&height16, sizeof(uint16_t), 1, f);
+        if (feof(f)) { fclose(f); return false; }
+        uint32_t width = width16 + 1;
+        uint32_t height = height16 + 1;
 
         DeleteTexture();
 
         glGenTextures(1, &texture);
         glBindTexture(GL_TEXTURE_2D, texture);
-        
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+
+        switch (type)
+        {
+            case 0: // RGBA (0xAABBGGRR)
+                std::vector<uint32_t> pixels;
+
+                bool texmiss_y = false;
+                for (uint32_t y = 0; y < height; y++)
+                {
+                    bool texmiss_x = texmiss_y;
+                    for (uint32_t x = 0; x < width; x++)
+                    {
+                        uint32_t pixel;
+                        fread(&pixel, sizeof(uint32_t), 1, f);
+                        if (!feof(f)) pixels.push_back(pixel);
+                        else
+                        {
+                            if (texmiss_x) pixels.push_back(0xFFFF00FF);
+                            else pixels.push_back(0xFF000000);
+                        }
+
+                        if (!(x % 8)) texmiss_x = !texmiss_x;
+                    }
+
+                    if (!(y % 8)) texmiss_y = !texmiss_y;
+                }
+
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+                break;
+
+            // case 1: // RGB type.
+            // case 2: // 16-bit depth RGB.
+        }
+
+        fclose(f);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+        return true;
     }
 };
 
@@ -183,8 +234,9 @@ class Entity
     glm::vec3 rot;
     glm::vec3 scl;
 
-    GLuint VAO, VBO, EBO;
+    GLuint VAO, VBO_VERTEX, VBO_UV, EBO;
 
+    Texture *texture = nullptr;
     Mesh *mesh = nullptr;
 
     void genbuffs()
@@ -192,21 +244,21 @@ class Entity
         if (!mesh) return;
 
         glGenVertexArrays(1, &VAO);
-        glGenBuffers(1, &VBO);
-        //glGenBuffers(1, &VBO_uvs);
+        glGenBuffers(1, &VBO_VERTEX);
+        glGenBuffers(1, &VBO_UV);
         glGenBuffers(1, &EBO);
 
         glBindVertexArray(VAO);
 
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO_VERTEX);
         glBufferData(GL_ARRAY_BUFFER, mesh->GetVertices().size() * sizeof(float), mesh->GetVertices().data(), GL_STATIC_DRAW);
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
         glEnableVertexAttribArray(0);
 
-        /*glBindBuffer(GL_ARRAY_BUFFER, VBO_uvs);
-        glBufferData(GL_ARRAY_BUFFER, mesh->get_uvs().size() * sizeof(float), mesh->get_uvs().data(), GL_STATIC_DRAW);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO_UV);
+        glBufferData(GL_ARRAY_BUFFER, mesh->GetUVs().size() * sizeof(float), mesh->GetUVs().data(), GL_STATIC_DRAW);
         glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
-        glEnableVertexAttribArray(1);*/
+        glEnableVertexAttribArray(1);
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh->GetIndices().size() * sizeof(unsigned int), mesh->GetIndices().data(), GL_STATIC_DRAW);
@@ -220,8 +272,8 @@ class Entity
         if (!mesh) return;
 
         glDeleteVertexArrays(1, &VAO);
-        glDeleteBuffers(1, &VBO);
-        //glDeleteBuffers(1, &VBO_uvs);
+        glDeleteBuffers(1, &VBO_VERTEX);
+        glDeleteBuffers(1, &VBO_UV);
         glDeleteBuffers(1, &EBO);
     }
 
@@ -233,13 +285,15 @@ class Entity
     inline glm::vec3 GetRotation() { return rot; }
     inline glm::vec3 GetScale() { return scl; }
 
+    inline Texture *GetTexture() { return texture; }
     inline Mesh *GetMesh() { return mesh; }
 
     inline void SetPosition(glm::vec3 v) { pos = v; }
     inline void SetRotation(glm::vec3 v) { rot = v; }
     inline void SetScale(glm::vec3 v) { scl = v; }
 
-    inline void SetMesh(Mesh *m)
+    inline void SetTexture(Texture *t) { texture = t; }
+    void SetMesh(Mesh *m)
     {
         mesh = m;
 
@@ -249,6 +303,7 @@ class Entity
 
     void render(ShaderProgram *sp, glm::mat4 *view, glm::mat4 *projection)
     {
+        if (!texture || !texture->HasTexture()) return;
         if (!mesh) return;
 
         glUseProgram(sp->GetShaderProgram());
@@ -266,12 +321,10 @@ class Entity
         
         glUniformMatrix4fv(glGetUniformLocation(sp->GetShaderProgram(), "model"), 1, GL_FALSE, glm::value_ptr(model));
 
-        /*// Активируем текстуру (биндим)
-        glActiveTexture(GL_TEXTURE0); // Текстурный юнит 0
-        glBindTexture(GL_TEXTURE_2D, texture->get_texture());
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texture->GetTexture());
 
-        // Указываем шейдеру, какой юнит использовать
-        glUniform1i(glGetUniformLocation(shader->get_shader_program(), "texture"), 0);*/
+        glUniform1i(glGetUniformLocation(sp->GetShaderProgram(), "texture"), 0);
 
         glBindVertexArray(VAO);
         glDrawElements(GL_TRIANGLES, mesh->GetIndices().size(), GL_UNSIGNED_INT, 0);
@@ -355,20 +408,24 @@ int main()
     if (ret != 0) return ret;
     glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-    //glEnable(GL_DEPTH_TEST);
+    glEnable(GL_DEPTH_TEST);
     
     ShaderProgram sp(vertexShaderSource, fragmentShaderSource);
 
     Camera cam = Camera();
     
     Mesh tri = Mesh();
-    tri.AddVertex(0.0, 0.0, 0.0);
-    tri.AddVertex(0.5, 1.0, 0.0);
-    tri.AddVertex(1.0, 0.0, 0.0);
+    tri.AddVertexWithUV(0.0, 0.0, 0.0, 0.0, 1.0);
+    tri.AddVertexWithUV(0.5, 1.0, 0.0, 0.0, 0.0);
+    tri.AddVertexWithUV(1.0, 0.0, 0.0, 1.0, 0.0);
     tri.AddTriangle(0, 1, 2);
+
+    Texture tex = Texture();
+    if (tex.LoadFromUCTEXFile("tex.uctex")) std::cout << "Successfully loaded texture!" << std::endl;
 
     Entity e = Entity();
     e.SetMesh(&tri);
+    e.SetTexture(&tex);
     e.SetPosition({0.0, 0.0, -5.0});
     e.SetScale({4.0, 4.0, 4.0});
 
@@ -409,7 +466,7 @@ int main()
             // ===== MAIN =====
             
             glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-            glClear(GL_COLOR_BUFFER_BIT);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
             //e.SetRotation(e.GetRotation() + glm::vec3(0, 0, glm::radians(0.1f)));
 
