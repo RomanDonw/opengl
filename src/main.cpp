@@ -91,19 +91,29 @@ class Mesh
     std::vector<unsigned int> indices;
     std::vector<float> uvs;
 
+    bool hasbuffers = false;
+    GLuint VAO, VBO_VERTEX, VBO_UV, EBO;
+
+    bool lockbuffers = false;
+    inline void updatebuffers() { if (!lockbuffers) RegenerateBuffers(); }
+
   public:
     Mesh(std::vector<float> _vertices, std::vector<unsigned int> _indices, std::vector<float> _uvs)
     {
         vertices = _vertices;
         indices = _indices;
         uvs = _uvs;
+
+        GenerateBuffers();
     }
 
     Mesh() {}
+    ~Mesh() { DeleteBuffers(); }
 
-    inline void ClearVertices() { vertices.clear(); }
-    inline void ClearIndices() { indices.clear(); }
-    inline void ClearMesh() { ClearVertices(); ClearIndices(); }
+    inline void ClearVertices() { vertices.clear(); DeleteBuffers(); }
+    inline void ClearIndices() { indices.clear(); DeleteBuffers(); }
+    inline void ClearUVs() { uvs.clear(); DeleteBuffers(); }
+    inline void ClearMesh() { ClearVertices(); ClearIndices(); ClearUVs(); }
 
     /*void AddVertex(float x, float y, float z)
     {
@@ -121,6 +131,8 @@ class Mesh
 
         uvs.push_back(u);
         uvs.push_back(v);
+
+        updatebuffers();
     }
     inline void AddVertexWithUV(glm::vec3 vertex, glm::vec2 uv) { AddVertexWithUV(vertex.x, vertex.y, vertex.z, uv.x, uv.y); }
 
@@ -129,13 +141,71 @@ class Mesh
         indices.push_back(v0);
         indices.push_back(v1);
         indices.push_back(v2);
-    }
 
-    ~Mesh() {}
+        updatebuffers();
+    }
 
     inline std::vector<float> GetVertices() { return vertices; }
     inline std::vector<unsigned int> GetIndices() { return indices; }
+    inline size_t GetIndicesCount() { return indices.size(); }
     inline std::vector<float> GetUVs() { return uvs; }
+
+    inline bool IsBuffersLocked() { return lockbuffers; }
+    inline void SetBuffersLock(bool state) { lockbuffers = state; }
+    inline void LockBuffers() { lockbuffers = true; }
+    inline void UnlockBuffers() { lockbuffers = false; }
+
+    inline bool HasBuffers() { return hasbuffers; }
+    inline GLuint GetVAO() { return VAO; }
+    //inline GLuint GetVBOVertices() { return VBO_VERTEX; }
+    //inline GLuint GetVBOUVS() { return VBO_UVS; }
+    //inline GLuint GetEBO() { return EBO; }
+
+    bool GenerateBuffers()
+    {
+        if (hasbuffers || vertices.size() == 0 || uvs.size() == 0 || indices.size() == 0) return false;
+
+        glGenVertexArrays(1, &VAO);
+        glGenBuffers(1, &VBO_VERTEX);
+        glGenBuffers(1, &VBO_UV);
+        glGenBuffers(1, &EBO);
+
+        glBindVertexArray(VAO);
+
+        glBindBuffer(GL_ARRAY_BUFFER, VBO_VERTEX);
+        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(0);
+
+        glBindBuffer(GL_ARRAY_BUFFER, VBO_UV);
+        glBufferData(GL_ARRAY_BUFFER, uvs.size() * sizeof(float), uvs.data(), GL_STATIC_DRAW);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(1);
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), indices.data(), GL_STATIC_DRAW);
+
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindVertexArray(0);
+
+        hasbuffers = true;
+        return true;
+    }
+
+    bool DeleteBuffers()
+    {
+        if (!hasbuffers) return false;
+
+        glDeleteVertexArrays(1, &VAO);
+        glDeleteBuffers(1, &VBO_VERTEX);
+        glDeleteBuffers(1, &VBO_UV);
+        glDeleteBuffers(1, &EBO);
+
+        hasbuffers = false;
+        return true;
+    }
+
+    inline void RegenerateBuffers() { GenerateBuffers(); DeleteBuffers(); }
 };
 
 class Texture
@@ -175,7 +245,7 @@ class Texture
 
         uint8_t type;
         fread(&type, sizeof(uint8_t), 1, f);
-        if (feof(f) || type > 0) { fclose(f); return false; }
+        if (feof(f) || type != 0 /*|| type != 2*/) { fclose(f); return false; }
 
         uint16_t width16, height16;
         fread(&width16, sizeof(uint16_t), 1, f);
@@ -219,7 +289,37 @@ class Texture
                 break;
 
             // case 1: // RGB type.
-            // case 2: // 16-bit depth RGB.
+            
+            #if 0
+            case 2: // 16-bit depth RGBA (1 bit alpha). (0bABBBBBGGGGGRRRRR)
+                std::vector<uint16_t> pixels;
+
+                bool texmiss_y = false;
+                for (uint32_t y = 0; y < height; y++)
+                {
+                    bool texmiss_x = texmiss_y;
+                    for (uint32_t x = 0; x < width; x++)
+                    {
+                        uint16_t pixel;
+                        fread(&pixel, sizeof(uint16_t), 1, f);
+                        if (!feof(f)) pixels.push_back(pixel);
+                        else
+                        {
+                            if (texmiss_x) pixels.push_back(0xFFFF00FF);
+                            else pixels.push_back(0xFF000000);
+                        }
+
+                        /*if (!(x % 8))*/ texmiss_x = !texmiss_x;
+                    }
+
+                    /*if (!((y + 1) % 8))*/ texmiss_y = !texmiss_y;
+                }
+
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA5_A1, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+                break;
+            #endif
+
+            // case 3: // 16-bit depth RGB.
         }
 
         glBindTexture(GL_TEXTURE_2D, 0);
@@ -233,9 +333,7 @@ class Texture
         if (!HasTexture()) return false;
 
         glBindTexture(GL_TEXTURE_2D, texture);
-
         glTexParameteri(GL_TEXTURE_2D, param, value);
-
         glBindTexture(GL_TEXTURE_2D, 0);
 
         return true;
@@ -258,83 +356,55 @@ class Entity
     glm::vec3 rot;
     glm::vec3 scl;
 
-    GLuint VAO, VBO_VERTEX, VBO_UV, EBO;
-
-    Texture *texture = nullptr;
-    Mesh *mesh = nullptr;
-
-    void genbuffs()
-    {
-        if (!mesh) return;
-
-        glGenVertexArrays(1, &VAO);
-        glGenBuffers(1, &VBO_VERTEX);
-        glGenBuffers(1, &VBO_UV);
-        glGenBuffers(1, &EBO);
-
-        glBindVertexArray(VAO);
-
-        glBindBuffer(GL_ARRAY_BUFFER, VBO_VERTEX);
-        glBufferData(GL_ARRAY_BUFFER, mesh->GetVertices().size() * sizeof(float), mesh->GetVertices().data(), GL_STATIC_DRAW);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-        glEnableVertexAttribArray(0);
-
-        glBindBuffer(GL_ARRAY_BUFFER, VBO_UV);
-        glBufferData(GL_ARRAY_BUFFER, mesh->GetUVs().size() * sizeof(float), mesh->GetUVs().data(), GL_STATIC_DRAW);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
-        glEnableVertexAttribArray(1);
-
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, mesh->GetIndices().size() * sizeof(unsigned int), mesh->GetIndices().data(), GL_STATIC_DRAW);
-
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-        glBindVertexArray(0);
-    }
-
-    void delbuffs()
-    {
-        if (!mesh) return;
-
-        glDeleteVertexArrays(1, &VAO);
-        glDeleteBuffers(1, &VBO_VERTEX);
-        glDeleteBuffers(1, &VBO_UV);
-        glDeleteBuffers(1, &EBO);
-    }
+    std::vector<std::pair<Texture *, Mesh *>> surfaces;
 
   public:
     Entity() {}
-    ~Entity() { delbuffs(); }
+    ~Entity() {}
 
     inline glm::vec3 GetPosition() { return pos; }
     inline glm::vec3 GetRotation() { return rot; }
     inline glm::vec3 GetScale() { return scl; }
 
-    inline Texture *GetTexture() { return texture; }
-    inline Mesh *GetMesh() { return mesh; }
-
     inline void SetPosition(glm::vec3 v) { pos = v; }
     inline void SetRotation(glm::vec3 v) { rot = v; }
     inline void SetScale(glm::vec3 v) { scl = v; }
 
-    inline void SetTexture(Texture *t) { texture = t; }
-    void SetMesh(Mesh *m)
-    {
-        mesh = m;
+    inline std::pair<Texture *, Mesh *> GetSurface(size_t index) { return surfaces.at(index); }
+    //inline std::pair<Mesh *, Texture *> GetSurface(size_t index) { return std::pair<Mesh *, Texture *>(GetSurface().second, GetSurface().first); }
+    inline size_t GetSurfacesCount() { return surfaces.size(); }
+    inline std::vector<std::pair<Texture *, Mesh *>> GetSurfaces() { return surfaces; }
+    inline void ClearSurfaces() { surfaces.clear(); }
+    inline Texture *GetSurfaceTexture(size_t index) { return GetSurface(index).first; }
+    inline Mesh *GetSurfaceMesh(size_t index) { return GetSurface(index).second; }
+    inline bool IsSurfaceExist(size_t index) { return index < surfaces.size(); }
+    
+    inline void AddSurface(std::pair<Texture *, Mesh *> surface) { surfaces.push_back(surface); }
+    inline void AddSurface(std::pair<Mesh *, Texture *> surface) { surfaces.push_back(std::pair<Texture *, Mesh *>(surface.second, surface.first)); }
+    inline void AddSurface(Texture *texture, Mesh *mesh) { surfaces.push_back(std::pair<Texture *, Mesh *>(texture, mesh)); }
+    inline void AddSurface(Mesh *mesh, Texture *texture) { surfaces.push_back(std::pair<Texture *, Mesh *>(texture, mesh)); }
 
-        delbuffs();
-        genbuffs();
+    bool SetSurface(size_t index, std::pair<Texture *, Mesh *> surface)
+    {
+        if (!IsSurfaceExist(index)) return false;
+        surfaces[index] = surface;
+        return true;
     }
+    inline bool SetSurface(size_t index, std::pair<Mesh *, Texture *> surface)
+    { return SetSurface(index, std::pair<Texture *, Mesh *>(surface.second, surface.first)); }
+    inline bool SetSurface(size_t index, Texture *texture, Mesh *mesh) { return SetSurface(index, std::pair<Texture *, Mesh *>(texture, mesh)); }
+    inline bool SetSurface(size_t index, Mesh *mesh, Texture *texture) { return SetSurface(index, texture, mesh); }
+
+    inline void RemoveSurface(size_t index) { surfaces.erase(surfaces.begin() + index); }
 
     void render(ShaderProgram *sp, glm::mat4 *view, glm::mat4 *projection)
     {
-        if (!texture || !texture->HasTexture()) return;
-        if (!mesh) return;
-
         glUseProgram(sp->GetShaderProgram());
 
         glUniformMatrix4fv(glGetUniformLocation(sp->GetShaderProgram(), "projection"), 1, GL_FALSE, glm::value_ptr(*projection));
         glUniformMatrix4fv(glGetUniformLocation(sp->GetShaderProgram(), "view"), 1, GL_FALSE, glm::value_ptr(*view));
 
+        /// TODO: добавить кеширование матрицы модели (maybe).
         glm::mat4 model = glm::mat4(1);
 
         model = glm::translate(model, pos);
@@ -345,13 +415,18 @@ class Entity
         
         glUniformMatrix4fv(glGetUniformLocation(sp->GetShaderProgram(), "model"), 1, GL_FALSE, glm::value_ptr(model));
 
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, texture->GetTexture());
-
         glUniform1i(glGetUniformLocation(sp->GetShaderProgram(), "texture"), 0);
+        glActiveTexture(GL_TEXTURE0);
 
-        glBindVertexArray(VAO);
-        glDrawElements(GL_TRIANGLES, mesh->GetIndices().size(), GL_UNSIGNED_INT, 0);
+        for (auto const &[texture, mesh] : surfaces)
+        {
+            if (!(texture && mesh && mesh->HasBuffers() && texture->HasTexture())) continue;
+
+            glBindTexture(GL_TEXTURE_2D, texture->GetTexture());
+
+            glBindVertexArray(mesh->GetVAO());
+            glDrawElements(GL_TRIANGLES, mesh->GetIndicesCount(), GL_UNSIGNED_INT, 0);
+        }
     }
 };
 
@@ -442,6 +517,8 @@ int main()
     Camera cam = Camera();
     
     Mesh tri = Mesh();
+    tri.LockBuffers();
+    
     tri.AddVertexWithUV(-0.5, -0.5, 0.0, 0.0, 0.0);
     tri.AddVertexWithUV(-0.5, 0.5, 0.0, 0.0, 0.99);
     tri.AddVertexWithUV(0.5, -0.5, 0.0, 0.99, 0.0);
@@ -449,12 +526,18 @@ int main()
     tri.AddTriangle(3, 1, 0);
     tri.AddTriangle(0, 2, 3);
 
+    tri.GenerateBuffers();
+    tri.UnlockBuffers();
+
     Texture tex = Texture();
-    if (tex.LoadFromUCTEXFile("tex.uctex")) std::cout << "Successfully loaded texture!" << std::endl;
+    if (tex.LoadFromUCTEXFile("tex.uctex"))
+    {
+        std::cout << "Successfully loaded texture!" << std::endl;
+        tex.SetDefaultParametres();
+    }
 
     Entity e = Entity();
-    e.SetMesh(&tri);
-    e.SetTexture(&tex);
+    e.AddSurface(&tex, &tri);
     e.SetPosition({0.0, 0.0, -5.0});
     e.SetScale({4.0, 4.0, 4.0});
 
