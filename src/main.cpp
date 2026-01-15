@@ -9,8 +9,11 @@
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
+
+#include <AL/al.h>
 
 const char* vertexShaderSource = R"(
 #version 330 core
@@ -206,27 +209,45 @@ class Texture
                             else pixels.push_back(0xFF000000);
                         }
 
-                        if (!(x % 8)) texmiss_x = !texmiss_x;
+                        /*if (!(x % 8))*/ texmiss_x = !texmiss_x;
                     }
 
-                    if (!(y % 8)) texmiss_y = !texmiss_y;
+                    /*if (!((y + 1) % 8))*/ texmiss_y = !texmiss_y;
                 }
 
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA8, GL_UNSIGNED_BYTE, pixels.data());
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
                 break;
 
             // case 1: // RGB type.
             // case 2: // 16-bit depth RGB.
         }
 
+        glBindTexture(GL_TEXTURE_2D, 0);
         fclose(f);
 
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        return true;
+    }
+
+    bool SetTextureIntParameter(GLenum param, GLint value)
+    {
+        if (!HasTexture()) return false;
+
+        glBindTexture(GL_TEXTURE_2D, texture);
+
+        glTexParameteri(GL_TEXTURE_2D, param, value);
+
+        glBindTexture(GL_TEXTURE_2D, 0);
 
         return true;
+    }
+
+    void SetDefaultParametres()
+    {
+        SetTextureIntParameter(GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        SetTextureIntParameter(GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+        SetTextureIntParameter(GL_TEXTURE_WRAP_S, GL_REPEAT);
+        SetTextureIntParameter(GL_TEXTURE_WRAP_T, GL_REPEAT);
     }
 };
 
@@ -412,16 +433,21 @@ int main()
     glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glEnable(GL_DEPTH_TEST);
+
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
     
     ShaderProgram sp(vertexShaderSource, fragmentShaderSource);
 
     Camera cam = Camera();
     
     Mesh tri = Mesh();
-    tri.AddVertexWithUV(0.0, 0.0, 0.0, 0.0, 1.0);
-    tri.AddVertexWithUV(0.5, 1.0, 0.0, 0.0, 0.0);
-    tri.AddVertexWithUV(1.0, 0.0, 0.0, 1.0, 0.0);
-    tri.AddTriangle(0, 1, 2);
+    tri.AddVertexWithUV(-0.5, -0.5, 0.0, 0.0, 0.0);
+    tri.AddVertexWithUV(-0.5, 0.5, 0.0, 0.0, 0.99);
+    tri.AddVertexWithUV(0.5, -0.5, 0.0, 0.99, 0.0);
+    tri.AddVertexWithUV(0.5, 0.5, 0.0, 0.99, 0.99);
+    tri.AddTriangle(3, 1, 0);
+    tri.AddTriangle(0, 2, 3);
 
     Texture tex = Texture();
     if (tex.LoadFromUCTEXFile("tex.uctex")) std::cout << "Successfully loaded texture!" << std::endl;
@@ -434,6 +460,7 @@ int main()
 
     float lastX = SCREEN_WIDTH / 2, lastY = SCREEN_HEIGHT / 2;
 
+    glfwSetTime(0);
     double prev_time = glfwGetTime();
     while (!glfwWindowShouldClose(window))
     {
@@ -471,7 +498,7 @@ int main()
             glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-            //e.SetRotation(e.GetRotation() + glm::vec3(0, 0, glm::radians(0.1f)));
+            //e.SetRotation(e.GetRotation() + glm::vec3(0, glm::radians(5.0f) * delta, 0));
 
             glm::mat4 view = cam.GetViewMatrix();
             glm::mat4 proj = cam.GetProjectionMatrix(SCREEN_WIDTH, SCREEN_HEIGHT);
