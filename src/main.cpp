@@ -40,19 +40,19 @@ const char* fragmentShaderSource = R"(
 in vec2 TexCoord;
 out vec4 FragColor;
 
+uniform vec4 color;
 uniform sampler2D texture;
 
 void main()
 {
-    //FragColor = vec4(0.2f, 0.5f, 0.8f, 1.0f);
-    FragColor = texture2D(texture, TexCoord);
+    FragColor = texture2D(texture, TexCoord) * color;
 }
 )";
 
 class ShaderProgram
 {
   private:
-    GLuint shprog;
+    GLuint shprog = 0;
 
   public:
     ShaderProgram(std::string vshader, std::string fshader)
@@ -115,14 +115,6 @@ class Mesh
     inline void ClearUVs() { uvs.clear(); DeleteBuffers(); }
     inline void ClearMesh() { ClearVertices(); ClearIndices(); ClearUVs(); }
 
-    /*void AddVertex(float x, float y, float z)
-    {
-        vertices.push_back(x);
-        vertices.push_back(y);
-        vertices.push_back(z);
-    }
-    inline void AddVertex(glm::vec3 vertex) { AddVertex(vertex.x, vertex.y, vertex.z); }*/
-
     void AddVertexWithUV(float x, float y, float z, float u, float v)
     {
         vertices.push_back(x);
@@ -157,9 +149,6 @@ class Mesh
 
     inline bool HasBuffers() { return hasbuffers; }
     inline GLuint GetVAO() { return VAO; }
-    //inline GLuint GetVBOVertices() { return VBO_VERTEX; }
-    //inline GLuint GetVBOUVS() { return VBO_UVS; }
-    //inline GLuint GetEBO() { return EBO; }
 
     bool GenerateBuffers()
     {
@@ -245,7 +234,7 @@ class Texture
 
         uint8_t type;
         fread(&type, sizeof(uint8_t), 1, f);
-        if (feof(f) || type != 0 /*|| type != 2*/) { fclose(f); return false; }
+        if (feof(f) || (type > 3)) { fclose(f); return false; }
 
         uint16_t width16, height16;
         fread(&width16, sizeof(uint16_t), 1, f);
@@ -259,12 +248,11 @@ class Texture
         glGenTextures(1, &texture);
         glBindTexture(GL_TEXTURE_2D, texture);
 
+        bool texmiss_y = false;
+        std::vector<uint32_t> pixels;
         switch (type)
         {
-            case 0: // RGBA (0xAABBGGRR)
-                std::vector<uint32_t> pixels;
-
-                bool texmiss_y = false;
+            case 0: // RGBA (0xAABBGGRR).
                 for (uint32_t y = 0; y < height; y++)
                 {
                     bool texmiss_x = texmiss_y;
@@ -272,29 +260,43 @@ class Texture
                     {
                         uint32_t pixel;
                         fread(&pixel, sizeof(uint32_t), 1, f);
-                        if (!feof(f)) pixels.push_back(pixel);
-                        else
+                        if (feof(f))
                         {
-                            if (texmiss_x) pixels.push_back(0xFFFF00FF);
-                            else pixels.push_back(0xFF000000);
+                            if (texmiss_x) pixel = 0xFFFF00FF;
+                            else pixel = 0xFF000000;
                         }
+                        pixels.push_back(pixel);
 
-                        /*if (!(x % 8))*/ texmiss_x = !texmiss_x;
+                        texmiss_x = !texmiss_x;
                     }
-
-                    /*if (!((y + 1) % 8))*/ texmiss_y = !texmiss_y;
+                    texmiss_y = !texmiss_y;
                 }
-
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
                 break;
 
-            // case 1: // RGB type.
-            
-            #if 0
-            case 2: // 16-bit depth RGBA (1 bit alpha). (0bABBBBBGGGGGRRRRR)
-                std::vector<uint16_t> pixels;
+            case 1: // RGB (0xBBGGRR).
+                for (uint32_t y = 0; y < height; y++)
+                {
+                    bool texmiss_x = texmiss_y;
+                    for (uint32_t x = 0; x < width; x++)
+                    {
+                        uint8_t r, g, b;
+                        fread(&r, sizeof(uint8_t), 1, f);
+                        fread(&g, sizeof(uint8_t), 1, f);
+                        fread(&b, sizeof(uint8_t), 1, f);
+                        if (feof(f))
+                        {
+                            if (texmiss_x) { r = 0; g = 255; b = 0; }
+                            else { r = 255; g = 255; b = 255; }
+                        }
+                        pixels.push_back((0xFF << 24) | (b << 16) | (g << 8) | r);
 
-                bool texmiss_y = false;
+                        texmiss_x = !texmiss_x;
+                    }
+                    texmiss_y = !texmiss_y;
+                }
+                break;
+            
+            case 2: // 16-bit depth RGBA (1 bit alpha). (0bABBBBBGGGGGRRRRR)
                 for (uint32_t y = 0; y < height; y++)
                 {
                     bool texmiss_x = texmiss_y;
@@ -302,25 +304,42 @@ class Texture
                     {
                         uint16_t pixel;
                         fread(&pixel, sizeof(uint16_t), 1, f);
-                        if (!feof(f)) pixels.push_back(pixel);
-                        else
+                        if (feof(f))
                         {
-                            if (texmiss_x) pixels.push_back(0xFFFF00FF);
-                            else pixels.push_back(0xFF000000);
+                            if (texmiss_x) pixel = 0b1000001111111111;
+                            else pixel = 0b1111110000000000;
                         }
+                        pixels.push_back((((pixel >> 15) * 255) << 24) | ((pixel & 0b11111) << 3) | ((pixel & (0b11111 << 5)) << 6) | ((pixel & (0b11111 << 10)) << 9));
 
-                        /*if (!(x % 8))*/ texmiss_x = !texmiss_x;
+                        texmiss_x = !texmiss_x;
                     }
-
-                    /*if (!((y + 1) % 8))*/ texmiss_y = !texmiss_y;
+                    texmiss_y = !texmiss_y;
                 }
-
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA5_A1, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
                 break;
-            #endif
 
-            // case 3: // 16-bit depth RGB.
+            case 3: // 16-bit depth RGB (0b0BBBBBGGGGGRRRRR).
+                for (uint32_t y = 0; y < height; y++)
+                {
+                    bool texmiss_x = texmiss_y;
+                    for (uint32_t x = 0; x < width; x++)
+                    {
+                        uint16_t pixel;
+                        fread(&pixel, sizeof(uint16_t), 1, f);
+                        if (feof(f))
+                        {
+                            if (texmiss_x) pixel = 0b0111111111100000;
+                            else pixel = 0b0000000000011111;
+                        }
+                        pixels.push_back((0xFF << 24) | ((pixel & 0b11111) << 3) | ((pixel & (0b11111 << 5)) << 6) | ((pixel & (0b11111 << 10)) << 9));
+
+                        texmiss_x = !texmiss_x;
+                    }
+                    texmiss_y = !texmiss_y;
+                }
+                break;
         }
+
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
 
         glBindTexture(GL_TEXTURE_2D, 0);
         fclose(f);
@@ -349,14 +368,70 @@ class Texture
     }
 };
 
+enum
+{
+    NoCulling = 0,
+    BackFace = 1,
+    FrontFace = 2,
+    BothFaces = 3
+} typedef FaceCullingType;
+
+class Surface
+{
+  private:
+    Texture *texture = nullptr;
+    Mesh *mesh = nullptr;
+    FaceCullingType culling = BackFace;
+
+  public:
+    Surface(Texture *t, Mesh *m, FaceCullingType c)
+    {
+        texture = t;
+        mesh = m;
+        culling = c;
+    }
+
+    Surface(Mesh *m, Texture *t, FaceCullingType c)
+    {
+        texture = t;
+        mesh = m;
+        culling = c;
+    }
+
+    Surface(Texture *t, Mesh *m)
+    {
+        texture = t;
+        mesh = m;
+    }
+
+    Surface(Mesh *m, Texture *t)
+    {
+        texture = t;
+        mesh = m;
+    }
+
+    ~Surface() {}
+
+    inline Texture *GetTexture() { return texture; }
+    inline Mesh *GetMesh() { return mesh; }
+    inline FaceCullingType GetFaceCullingType() { return culling; }
+
+    inline void SetTexture(Texture *t) { texture = t; }
+    inline void SetMesh(Mesh *m) { mesh = m; }
+    inline void SetFaceCullingType(FaceCullingType c) { culling = c; }
+};
+
 class Entity
 {
   private:
-    glm::vec3 pos;
-    glm::vec3 rot;
-    glm::vec3 scl;
+    glm::vec3 pos = glm::vec3(0.0f);
+    glm::vec3 rot = glm::vec3(0.0f);
+    glm::vec3 scl = glm::vec3(0.0f);
+    glm::vec4 color = glm::vec4(1.0f);
 
-    std::vector<std::pair<Texture *, Mesh *>> surfaces;
+    std::vector<Surface> surfaces;
+
+    bool enable_render = true;
 
   public:
     Entity() {}
@@ -365,40 +440,41 @@ class Entity
     inline glm::vec3 GetPosition() { return pos; }
     inline glm::vec3 GetRotation() { return rot; }
     inline glm::vec3 GetScale() { return scl; }
+    inline glm::vec4 GetColor() { return color; }
 
     inline void SetPosition(glm::vec3 v) { pos = v; }
     inline void SetRotation(glm::vec3 v) { rot = v; }
     inline void SetScale(glm::vec3 v) { scl = v; }
+    inline void SetColor(glm::vec4 c) { color = c; }
 
-    inline std::pair<Texture *, Mesh *> GetSurface(size_t index) { return surfaces.at(index); }
-    //inline std::pair<Mesh *, Texture *> GetSurface(size_t index) { return std::pair<Mesh *, Texture *>(GetSurface().second, GetSurface().first); }
+    inline Surface GetSurface(size_t index) { return surfaces.at(index); }
     inline size_t GetSurfacesCount() { return surfaces.size(); }
-    inline std::vector<std::pair<Texture *, Mesh *>> GetSurfaces() { return surfaces; }
+    inline std::vector<Surface> GetSurfaces() { return surfaces; }
     inline void ClearSurfaces() { surfaces.clear(); }
-    inline Texture *GetSurfaceTexture(size_t index) { return GetSurface(index).first; }
-    inline Mesh *GetSurfaceMesh(size_t index) { return GetSurface(index).second; }
     inline bool IsSurfaceExist(size_t index) { return index < surfaces.size(); }
-    
-    inline void AddSurface(std::pair<Texture *, Mesh *> surface) { surfaces.push_back(surface); }
-    inline void AddSurface(std::pair<Mesh *, Texture *> surface) { surfaces.push_back(std::pair<Texture *, Mesh *>(surface.second, surface.first)); }
-    inline void AddSurface(Texture *texture, Mesh *mesh) { surfaces.push_back(std::pair<Texture *, Mesh *>(texture, mesh)); }
-    inline void AddSurface(Mesh *mesh, Texture *texture) { surfaces.push_back(std::pair<Texture *, Mesh *>(texture, mesh)); }
-
-    bool SetSurface(size_t index, std::pair<Texture *, Mesh *> surface)
+    inline void AddSurface(Surface surface) { surfaces.push_back(surface); }
+    bool SetSurface(size_t index, Surface surface)
     {
         if (!IsSurfaceExist(index)) return false;
         surfaces[index] = surface;
         return true;
     }
-    inline bool SetSurface(size_t index, std::pair<Mesh *, Texture *> surface)
-    { return SetSurface(index, std::pair<Texture *, Mesh *>(surface.second, surface.first)); }
-    inline bool SetSurface(size_t index, Texture *texture, Mesh *mesh) { return SetSurface(index, std::pair<Texture *, Mesh *>(texture, mesh)); }
-    inline bool SetSurface(size_t index, Mesh *mesh, Texture *texture) { return SetSurface(index, texture, mesh); }
+    bool RemoveSurface(size_t index)
+    {
+        if (!IsSurfaceExist(index)) return false;
+        surfaces.erase(surfaces.begin() + index);
+        return false;
+    }
 
-    inline void RemoveSurface(size_t index) { surfaces.erase(surfaces.begin() + index); }
+    inline bool IsRenderEnabled() { return enable_render; }
+    inline void SetRenderEnabled(bool enable) { enable_render = enable; }
+    inline void EnableRender() { enable_render = true; }
+    inline void DisableRender() { enable_render = false; }
 
     void render(ShaderProgram *sp, glm::mat4 *view, glm::mat4 *projection)
     {
+        if (!enable_render) return;
+
         glUseProgram(sp->GetShaderProgram());
 
         glUniformMatrix4fv(glGetUniformLocation(sp->GetShaderProgram(), "projection"), 1, GL_FALSE, glm::value_ptr(*projection));
@@ -415,12 +491,34 @@ class Entity
         
         glUniformMatrix4fv(glGetUniformLocation(sp->GetShaderProgram(), "model"), 1, GL_FALSE, glm::value_ptr(model));
 
+        glUniform4fv(glGetUniformLocation(sp->GetShaderProgram(), "color"), 1, glm::value_ptr(color));
+
         glUniform1i(glGetUniformLocation(sp->GetShaderProgram(), "texture"), 0);
         glActiveTexture(GL_TEXTURE0);
 
-        for (auto const &[texture, mesh] : surfaces)
+        for (Surface surface : surfaces)
         {
-            if (!(texture && mesh && mesh->HasBuffers() && texture->HasTexture())) continue;
+            Texture *texture = surface.GetTexture();
+            Mesh *mesh = surface.GetMesh();
+            FaceCullingType culling = surface.GetFaceCullingType();
+            if (!(texture && mesh && mesh->HasBuffers() && texture->HasTexture() && culling != BothFaces)) continue;
+
+            if (culling == NoCulling) glDisable(GL_CULL_FACE);
+            else
+            {
+                glEnable(GL_CULL_FACE);
+
+                switch (culling)
+                {
+                    case BackFace:
+                        glCullFace(GL_BACK);
+                        break;
+
+                    case FrontFace:
+                        glCullFace(GL_FRONT);
+                        break;
+                }
+            }
 
             glBindTexture(GL_TEXTURE_2D, texture->GetTexture());
 
@@ -433,8 +531,8 @@ class Entity
 class Camera
 {
   private:
-    glm::vec3 pos;
-    glm::vec3 rot;
+    glm::vec3 pos = glm::vec3(0.0f);
+    glm::vec3 rot = glm::vec3(0.0f);
     float neardist = 0.1;
     float fardist = 1000;
     float fov = glm::radians(60.0f);
@@ -488,7 +586,6 @@ class Camera
     inline glm::vec3 GetUp() { return up; };
 
     inline glm::mat4 GetViewMatrix() { return mview; }
-
     inline glm::mat4 GetProjectionMatrix(unsigned int screen_width, unsigned int screen_height)
     { return glm::perspective(fov, (float)screen_width / (float)screen_height, neardist, fardist); }
 };
@@ -509,8 +606,8 @@ int main()
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glEnable(GL_DEPTH_TEST);
 
-    glEnable(GL_CULL_FACE);
-    glCullFace(GL_BACK);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     
     ShaderProgram sp(vertexShaderSource, fragmentShaderSource);
 
@@ -520,9 +617,9 @@ int main()
     tri.LockBuffers();
     
     tri.AddVertexWithUV(-0.5, -0.5, 0.0, 0.0, 0.0);
-    tri.AddVertexWithUV(-0.5, 0.5, 0.0, 0.0, 0.99);
-    tri.AddVertexWithUV(0.5, -0.5, 0.0, 0.99, 0.0);
-    tri.AddVertexWithUV(0.5, 0.5, 0.0, 0.99, 0.99);
+    tri.AddVertexWithUV(-0.5, 0.5, 0.0, 0.0, 1.0);
+    tri.AddVertexWithUV(0.5, -0.5, 0.0, 1.0, 0.0);
+    tri.AddVertexWithUV(0.5, 0.5, 0.0, 1.0, 1.0);
     tri.AddTriangle(3, 1, 0);
     tri.AddTriangle(0, 2, 3);
 
@@ -536,12 +633,39 @@ int main()
         tex.SetDefaultParametres();
     }
 
+    Texture tex16 = Texture();
+    if (tex16.LoadFromUCTEXFile("tex16bit.uctex"))
+    {
+        std::cout << "Successfully loaded texture 2!" << std::endl;
+        tex16.SetDefaultParametres();
+    }
+
+    Texture tex16_rgb = Texture();
+    if (tex16_rgb.LoadFromUCTEXFile("tex16bit_rgb.uctex"))
+    {
+        std::cout << "Successfully loaded texture 3!" << std::endl;
+        tex16_rgb.SetDefaultParametres();
+    }
+
     Entity e = Entity();
-    e.AddSurface(&tex, &tri);
+    e.AddSurface(Surface(&tex, &tri, NoCulling));
     e.SetPosition({0.0, 0.0, -5.0});
-    e.SetScale({4.0, 4.0, 4.0});
+    e.SetScale({1.0, 1.0, 1.0});
+    e.SetColor({1.0f, 1.0f, 1.0f, 1.0f});
+
+    Entity e2 = Entity();
+    e2.AddSurface(Surface(&tex16, &tri));
+    e2.SetPosition({0.0, 0.0, -2.0});
+    e2.SetScale({1.0, 1.0, 1.0});
+    e2.SetColor({1.0f, 1.0f, 1.0f, 0.5f});
+
+    Entity e3 = Entity();
+    e3.AddSurface(Surface(&tex16_rgb, &tri));
+    e3.SetPosition({0.0, 0.0, -10.0});
+    e3.SetScale({1.0, 1.0, 1.0});
 
     float lastX = SCREEN_WIDTH / 2, lastY = SCREEN_HEIGHT / 2;
+    glfwSetCursorPos(window, lastX, lastY);
 
     glfwSetTime(0);
     double prev_time = glfwGetTime();
@@ -555,10 +679,18 @@ int main()
 
             // ===== CONTROLS =====
 
-            if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) cam.SetPosition(cam.GetPosition() + cam.GetFront() * glm::vec3(3.0 * delta));
-            if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) cam.SetPosition(cam.GetPosition() - cam.GetFront() * glm::vec3(3.0 * delta));
-            if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) cam.SetPosition(cam.GetPosition() - cam.GetRight() * glm::vec3(3.0 * delta));
-            if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) cam.SetPosition(cam.GetPosition() + cam.GetRight() * glm::vec3(3.0 * delta));
+            float speed;
+            if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) speed = 6;
+            else if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) speed = 1;
+            else speed = 3;
+
+            if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) cam.SetPosition(cam.GetPosition() + cam.GetFront() * glm::vec3(speed * delta));
+            if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) cam.SetPosition(cam.GetPosition() - cam.GetFront() * glm::vec3(speed * delta));
+            if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) cam.SetPosition(cam.GetPosition() - cam.GetRight() * glm::vec3(speed * delta));
+            if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) cam.SetPosition(cam.GetPosition() + cam.GetRight() * glm::vec3(speed * delta));
+
+            if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) cam.SetPosition(cam.GetPosition() + glm::vec3(0, speed * delta, 0));
+            if (glfwGetKey(window, GLFW_KEY_LEFT_ALT) == GLFW_PRESS) cam.SetPosition(cam.GetPosition() - glm::vec3(0, speed * delta, 0));
 
             double mouseX, mouseY;
             glfwGetCursorPos(window, &mouseX, &mouseY);
@@ -581,11 +713,13 @@ int main()
             glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-            //e.SetRotation(e.GetRotation() + glm::vec3(0, glm::radians(5.0f) * delta, 0));
+            e.SetRotation(e.GetRotation() + glm::vec3(0, glm::radians(360.0f) * delta, 0));
 
             glm::mat4 view = cam.GetViewMatrix();
             glm::mat4 proj = cam.GetProjectionMatrix(SCREEN_WIDTH, SCREEN_HEIGHT);
             e.render(&sp, &view, &proj);
+            e2.render(&sp, &view, &proj);
+            e3.render(&sp, &view, &proj);
             
             // Обмен буферов
             glfwSwapBuffers(window);
@@ -621,7 +755,7 @@ int initOpenGL(GLFWwindow **window)
     
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
-        std::cerr << "Failed to initialize GLAD" << std::endl;
+        std::cerr << "Failed to initialize GLAD." << std::endl;
         glfwTerminate();
         return 1;
     }
