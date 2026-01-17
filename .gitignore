@@ -1,6 +1,7 @@
 .vscode/
 *.code-workspace
 *.bak
+*.png~
 
 /*.dll
 /*.exe
