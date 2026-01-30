@@ -28,7 +28,7 @@ namespace Utils
         float len = glm::length(v);
         if (len == 0) return glm::vec3(0.0f);
 
-        return glm::vec3(glm::acos(v.z / len), glm::atan(v.y, v.x), roll);
+        return glm::vec3(glm::asin(v.y / len), glm::atan(v.x, v.z), roll);
     }
 
     /*
