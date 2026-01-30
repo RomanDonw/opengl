@@ -7,12 +7,19 @@
 #include <cstdint>
 #include <cstring>
 
+#define GLM_ENABLE_EXPERIMENTAL
+
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtc/quaternion.hpp>
+#include <glm/gtx/quaternion.hpp>
+
 #include <AL/al.h>
 
+#include "utils.hpp"
 #include "objects.hpp"
 
 const char* vertexShaderSource = R"(
@@ -208,7 +215,27 @@ int main()
     e4.SetColor({1.0f, 1.0f, 1.0f, 1.0f});
     e4.SetScale({3.0f, 1.0f, 1.0f});
 
+    //Entity ground = Entity();
+    //ground.AddSurface(Surface(&tex_cube, &cube));
+    //ground.SetScale({5.0f, 1.0f, 5.0f});
+
+    //glm::vec3 scl = ground.GetScale();
+    //AABB ground_coll = AABB({-0.5f * scl.x, -0.5f * scl.y, -0.5f * scl.z}, {0.5f * scl.x, 0.5f * scl.y, 0.5f * scl.z});
+
+    //Entity prop = Entity();
+    //prop.SetPosition({1.0f, 20.0f, 0.0f});
+    //prop.AddSurface(Surface(&tex_cube, &cube));
+
+    //scl = prop.GetScale();
+    //AABB prop_coll = AABB({-0.5f * scl.x, -0.5f * scl.y, -0.5f * scl.z}, {0.5f * scl.x, 0.5f * scl.y, 0.5f * scl.z});
+
     // ===== ===== MAIN ===== =====
+
+    /*glm::vec3 vel = glm::vec3(0.0f);
+    float mass = 1.0f;
+    float inv_mass;
+    if (mass > 0) inv_mass = 1.0f / mass;
+    else inv_mass = 0;*/
 
     float lastX = SCREEN_WIDTH / 2, lastY = SCREEN_HEIGHT / 2;
     glfwSetCursorPos(window, lastX, lastY);
@@ -264,12 +291,69 @@ int main()
 
             //e4.SetRotation(e4.GetRotation() + glm::vec3(0, glm::radians(90.0f) * delta, glm::radians(30.0f) * delta));
 
+
+            /*prop.SetPosition(prop.GetPosition() + glm::vec3(0.0f, -5.0f * delta, 0.0f));
+
+            AABB currAABB = prop_coll.Copy();
+            currAABB.Translate(prop.GetPosition());
+
+            std::cout << ground_coll.GetAABBPenetration(&currAABB).y << std::endl;
+            if (currAABB.AABBIntersects(ground_coll)) std::cout << "Intersects!" << std::endl;
+
+            prop.SetPosition(prop.GetPosition() + ground_coll.GetAABBPushForce(&currAABB));*/
+
+            /*AABB currAABB = prop_coll.Copy();
+            currAABB.Translate(prop.GetPosition());
+
+            glm::vec3 pen = ground_coll.GetAABBWeightedPenetration(&currAABB);
+            glm::vec3 pennorm = Utils::normalize(pen);
+
+            glm::vec3 force = glm::vec3(0.0f, -9.8f * mass, 0.0f);
+
+            force -= pennorm * force;
+
+            glm::vec3 accel = force / glm::vec3(mass);
+
+            vel += accel * glm::vec3(delta);
+            vel -= pennorm * vel;
+
+            prop.SetPosition(prop.GetPosition() + vel * glm::vec3(delta) + pen - glm::vec3(0.00001f) * pennorm);
+
+            std::cout << "pennorm Y: " << pennorm.y << ", force Y: " << force.y << ", vel Y: " << vel.y << ", pos Y: " << prop.GetPosition().y << std::endl;*/
+
+            //AABB currAABB = prop_coll.Copy();
+            //currAABB.Translate(prop.GetPosition());
+
+            /*glm::vec3 pen = ground_coll.GetAABBPenetration(&currAABB);
+            glm::vec3 pushDir = Utils::normalize(currAABB.GetCenterOffset() - ground_coll.GetAABBOverlapRegion(&currAABB).GetCenterOffset());
+            
+            glm::vec3 force = glm::vec3(0.0f, -9.8f * mass, 0.0f);
+
+            force -= pushDir * pen;
+
+            glm::vec3 accel = force / glm::vec3(mass);
+
+            vel += accel * glm::vec3(delta);
+            //vel -= vel * pushDir * pen;
+
+            prop.SetPosition(prop.GetPosition() + vel * glm::vec3(delta) + pen);*/
+
+            /*if (ground_coll.AABBIntersects(&currAABB))
+            {
+                glm::vec3 relvel = vel;
+                
+            }*/
+
+
             glm::mat4 view = cam.GetViewMatrix();
             glm::mat4 proj = cam.GetProjectionMatrix(SCREEN_WIDTH, SCREEN_HEIGHT);
             e.Render(&sp, &view, &proj);
             e2.Render(&sp, &view, &proj);
             e3.Render(&sp, &view, &proj);
             e4.Render(&sp, &view, &proj);
+
+            //ground.Render(&sp, &view, &proj);
+            //prop.Render(&sp, &view, &proj);
             
             glfwSwapBuffers(window);
 
