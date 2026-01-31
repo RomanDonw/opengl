@@ -194,26 +194,19 @@ int main()
        ===== ===== =====
     */
 
-    Entity e = Entity();
+    Entity e = Entity(Transform({0.0f, 0.0f, -5.0f}));
     e.AddSurface(Surface(&tex, &tri, NoCulling));
-    e.SetPosition({0.0, 0.0, -5.0});
-    e.SetColor({1.0f, 1.0f, 1.0f, 1.0f});
 
     Entity e2 = Entity();
     e2.AddSurface(Surface(&tex16, &tri));
-    e2.SetPosition({0.0, 0.0, -2.0});
     e2.SetColor({1.0f, 1.0f, 1.0f, 0.5f});
 
-    Entity e3 = Entity();
+    Entity e3 = Entity(Transform({0.0f, 0.0f, -10.0f}, glm::vec3(0.0f), {1.0f, 10.0f, 1.0f}));
     e3.AddSurface(Surface(&tex16_rgb, &tri));
-    e3.SetPosition({0.0, 0.0, -10.0});
-    e3.SetScale({1.0f, 10.0f, 1.0f});
 
-    Entity e4 = Entity();
+    Entity e4 = Entity(Transform({0, 0, -13}, glm::vec3(0), {3.0f, 1.0f, 1.0f}));
     e4.AddSurface(Surface(&tex_cube, &cube));
-    e4.SetPosition({0, 0, -13});
     e4.SetColor({1.0f, 1.0f, 1.0f, 1.0f});
-    e4.SetScale({3.0f, 1.0f, 1.0f});
 
     //Entity ground = Entity();
     //ground.AddSurface(Surface(&tex_cube, &cube));
@@ -250,44 +243,47 @@ int main()
             prev_time = glfwGetTime();
 
             // ===== CONTROLS =====
+            {
+                float speed;
+                if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) speed = cameraSpeed * 2.0;
+                else if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) speed = cameraSpeed / 2.0;
+                else speed = cameraSpeed;
 
-            float speed;
-            if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) speed = cameraSpeed * 2.0;
-            else if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) speed = cameraSpeed / 2.0;
-            else speed = cameraSpeed;
+                Transform *t = &cam.transform;
 
-            if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) cam.SetPosition(cam.GetPosition() + cam.GetFront() * glm::vec3(speed * delta));
-            if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) cam.SetPosition(cam.GetPosition() - cam.GetFront() * glm::vec3(speed * delta));
-            if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) cam.SetPosition(cam.GetPosition() - cam.GetRight() * glm::vec3(speed * delta));
-            if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) cam.SetPosition(cam.GetPosition() + cam.GetRight() * glm::vec3(speed * delta));
+                if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) t->Translate(t->GetFront() * glm::vec3(speed * delta));
+                if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) t->Translate(-t->GetFront() * glm::vec3(speed * delta));
+                if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) t->Translate(-t->GetRight() * glm::vec3(speed * delta));
+                if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) t->Translate(t->GetRight() * glm::vec3(speed * delta));
 
-            if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) cam.SetPosition(cam.GetPosition() + glm::vec3(0, speed * delta, 0));
-            if (glfwGetKey(window, GLFW_KEY_LEFT_ALT) == GLFW_PRESS) cam.SetPosition(cam.GetPosition() - glm::vec3(0, speed * delta, 0));
+                if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) t->Translate(glm::vec3(0, speed * delta, 0));
+                if (glfwGetKey(window, GLFW_KEY_LEFT_ALT) == GLFW_PRESS) t->Translate(glm::vec3(0, -speed * delta, 0));
 
-            if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE) == GLFW_PRESS) cameraSpeed = DEFAULT_CAMERA_SPEED;
+                if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE) == GLFW_PRESS) cameraSpeed = DEFAULT_CAMERA_SPEED;
 
-            double mouseX, mouseY;
-            glfwGetCursorPos(window, &mouseX, &mouseY);
+                double mouseX, mouseY;
+                glfwGetCursorPos(window, &mouseX, &mouseY);
 
-            glm::vec3 r = cam.GetRotation();
+                glm::vec3 r = t->GetRotation();
 
-            r.y -= glm::radians((mouseX - lastX) * MOUSE_SENSITIVITY);
-            r.x -= glm::radians((mouseY - lastY) * MOUSE_SENSITIVITY);
-            if (glm::degrees(r.x) > 89.0f) r.x = glm::radians(89.0f);
-            if (glm::degrees(r.x) < -89.0f) r.x = glm::radians(-89.0f);
-            r.y = fmod(r.y, 360);
+                r.y -= glm::radians((mouseX - lastX) * MOUSE_SENSITIVITY);
+                r.x -= glm::radians((mouseY - lastY) * MOUSE_SENSITIVITY);
+                if (glm::degrees(r.x) > 89.0f) r.x = glm::radians(89.0f);
+                if (glm::degrees(r.x) < -89.0f) r.x = glm::radians(-89.0f);
+                r.y = fmod(r.y, 360);
 
-            cam.SetRotation(r);
+                t->SetRotation(r);
 
-            lastX = mouseX;
-            lastY = mouseY;
+                lastX = mouseX;
+                lastY = mouseY;
+            }
 
             // ===== MAIN =====
             
             glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-            e.SetRotation(e.GetRotation() + glm::vec3(0, glm::radians(360.0f) * delta, 0));
+            e.transform.Rotate(glm::vec3(0, glm::radians(360.0f) * delta, 0));
 
             //e4.SetRotation(e4.GetRotation() + glm::vec3(0, glm::radians(90.0f) * delta, glm::radians(30.0f) * delta));
 

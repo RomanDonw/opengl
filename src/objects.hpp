@@ -455,14 +455,35 @@ class Transform
 
     bool lock_cache = false;
     inline void updatecache() { if (!lock_cache) UpdateCache(); }
-    // cache:
 
+    // cache:
     glm::quat rot_quat;
     glm::mat4 rot_mat;
 
     glm::vec3 front, up, right;
 
   public:
+    Transform(glm::vec3 pos, glm::vec3 rot, glm::vec3 scl)
+    {
+        position = pos;
+        rotation = rot;
+        scale = scl;
+        UpdateCache();
+    }
+
+    Transform(glm::vec3 pos, glm::vec3 rot)
+    {
+        position = pos;
+        rotation = rot;
+        UpdateCache();
+    }
+
+    Transform(glm::vec3 pos)
+    {
+        position = pos;
+        UpdateCache();
+    }
+
     Transform() { UpdateCache(); }
 
     inline bool IsCacheLocked() { return lock_cache; }
@@ -492,28 +513,21 @@ class Transform
     inline glm::vec3 GetUp() { return up; }
     inline glm::vec3 GetRight() { return right; }
 
-    glm::mat4 GetTransformMatrix() 
-    {
-        glm::mat4 ret = glm::mat4(1.0f);
-
-        ret = glm::translate(ret, position);
-        ret *= rot_mat;
-        ret = glm::scale(ret, scale);
-
-        return ret;
-    }
+    inline glm::mat4 GetTransformMatrix() 
+    { return glm::scale(glm::translate(glm::mat4(1), position) * rot_mat, scale); }
 
     inline void SetPosition(glm::vec3 v) { position = v; }
     inline void SetRotation(glm::vec3 v) { rotation = v; updatecache(); }
     inline void SetScale(glm::vec3 v) { scale = v; }
+
+    inline void Translate(glm::vec3 v) { position += v; }
+    inline void Rotate(glm::vec3 v) { rotation += v; updatecache(); }
+    inline void Scale(glm::vec3 v) { scale += v; }
 };
 
 class Entity
 {
   private:
-    glm::vec3 pos = glm::vec3(0.0f);
-    glm::vec3 rot = glm::vec3(0.0f);
-    glm::vec3 scl = glm::vec3(1.0f);
     glm::vec4 color = glm::vec4(1.0f);
 
     std::vector<Surface> surfaces;
@@ -521,17 +535,15 @@ class Entity
     bool enable_render = true;
 
   public:
+    Transform transform = Transform();
+
+    Entity(Transform t) { transform = t; }
     Entity() {}
+    
     ~Entity() {}
 
-    inline glm::vec3 GetPosition() { return pos; }
-    inline glm::vec3 GetRotation() { return rot; }
-    inline glm::vec3 GetScale() { return scl; }
     inline glm::vec4 GetColor() { return color; }
 
-    inline void SetPosition(glm::vec3 v) { pos = v; }
-    inline void SetRotation(glm::vec3 v) { rot = v; }
-    inline void SetScale(glm::vec3 v) { scl = v; }
     inline void SetColor(glm::vec4 c) { color = c; }
 
     inline Surface GetSurface(size_t index) { return surfaces.at(index); }
@@ -566,17 +578,7 @@ class Entity
 
         glUniformMatrix4fv(glGetUniformLocation(sp->GetShaderProgram(), "projection"), 1, GL_FALSE, glm::value_ptr(*projection));
         glUniformMatrix4fv(glGetUniformLocation(sp->GetShaderProgram(), "view"), 1, GL_FALSE, glm::value_ptr(*view));
-
-        /// TODO: добавить кеширование матрицы модели (maybe).
-        glm::mat4 model = glm::mat4(1);
-
-        model = glm::translate(model, pos);
-        model = glm::rotate(model, rot.x, {1, 0, 0});
-        model = glm::rotate(model, rot.y, {0, 1, 0});
-        model = glm::rotate(model, rot.z, {0, 0, 1});
-        model = glm::scale(model, scl);
-        
-        glUniformMatrix4fv(glGetUniformLocation(sp->GetShaderProgram(), "model"), 1, GL_FALSE, glm::value_ptr(model));
+        glUniformMatrix4fv(glGetUniformLocation(sp->GetShaderProgram(), "model"), 1, GL_FALSE, glm::value_ptr(transform.GetTransformMatrix()));
 
         glUniform4fv(glGetUniformLocation(sp->GetShaderProgram(), "color"), 1, glm::value_ptr(color));
 
@@ -623,61 +625,40 @@ class Entity
 class Camera
 {
   private:
-    glm::vec3 pos = glm::vec3(0.0f);
-    glm::vec3 rot = glm::vec3(0.0f);
     float neardist = 0.1;
     float fardist = 1000;
     float fov = glm::radians(60.0f);
-
-    glm::vec3 front, right, up;
-    glm::mat4 mview;
-
-    void updatecache()
-    {
-        glm::quat q = glm::quat(rot);
-        front = q * glm::vec3(0, 0, -1.0f);
-        right = q * glm::vec3(1.0f, 0, 0);
-        up = q * glm::vec3(0, 1.0f, 0);
-        mview = glm::lookAt(pos, pos + front, up);
-    }
     
   public:
+    Transform transform = Transform();
+
     Camera(float _fov, float _neardist, float _fardist)
     {
         fov = _fov;
         neardist = _neardist;
         fardist = _fardist;
-        updatecache();
     }
 
     Camera(float _neardist, float _fardist)
     {
         neardist = _neardist;
         fardist = _fardist;
-        updatecache();
     }
 
-    Camera(float _fov) { fov = _fov; updatecache(); }
+    Camera(float _fov) { fov = _fov; }
 
-    Camera() { updatecache(); }
+    Camera() {}
 
-    inline glm::vec3 GetPosition() { return pos; }
-    inline glm::vec3 GetRotation() { return rot; }
     inline float GetNearDistance() { return neardist; }
     inline float GetFarDistance() { return fardist; }
     inline float GetFOV() { return fov; }
 
-    inline void SetPosition(glm::vec3 v) { pos = v; updatecache(); }
-    inline void SetRotation(glm::vec3 v) { rot = v; updatecache(); }
     inline void SetNearDistance(float _neardist) { neardist = _neardist; }
     inline void SetFarDistance(float _fardist) { fardist = _fardist; }
     inline void SetFOV(float _fov) { fov = _fov; }
 
-    inline glm::vec3 GetFront() { return front; };
-    inline glm::vec3 GetRight() { return right; };
-    inline glm::vec3 GetUp() { return up; };
-
-    inline glm::mat4 GetViewMatrix() { return mview; }
+    inline glm::mat4 GetViewMatrix()
+    { return glm::lookAt(transform.GetPosition(), transform.GetPosition() + transform.GetFront(), transform.GetUp()); }
     inline glm::mat4 GetProjectionMatrix(unsigned int screen_width, unsigned int screen_height)
     { return glm::perspective(fov, (float)screen_width / (float)screen_height, neardist, fardist); }
 };
