@@ -12,7 +12,7 @@ UCTEX_TYPE_RGB5 = 3
 if len(sys.argv) >= 2 + 1:
     if os.path.isfile(sys.argv[1]):
         if os.path.isfile(sys.argv[2]):
-            if input(f"Output file \"{sys.argv[2]}\" already exist. Overwrite it (type \"y\" to confirm)? ").lower() != "y":
+            if input(f"Output file \"{sys.argv[2]}\" already exist. Overwrite it (type \"y\" and press Enter to confirm)? ").lower() != "y":
                 print("Overwriting canceled.")
                 exit(0)
 

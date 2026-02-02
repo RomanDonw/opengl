@@ -6,6 +6,7 @@
 #include <filesystem>
 #include <cstdint>
 #include <cstring>
+#include <sstream>
 
 #define GLM_ENABLE_EXPERIMENTAL
 
@@ -158,6 +159,12 @@ int main()
     cube.GenerateBuffers();
     cube.UnlockBuffers();
 
+    Mesh test = Mesh();
+    if (test.LoadFromUCMESHFile("test.obj"))
+    {
+        std::cout << "Successfully loaded model from \"test.ucmesh\" file." << std::endl;
+    }
+
     // ===== TEXTURES =====
 
     Texture tex = Texture();
@@ -206,7 +213,9 @@ int main()
 
     Entity e4 = Entity(Transform({0, 0, -13}, glm::vec3(0), {3.0f, 1.0f, 1.0f}));
     e4.AddSurface(Surface(&tex_cube, &cube));
-    e4.SetColor({1.0f, 1.0f, 1.0f, 1.0f});
+
+    Entity e5 = Entity(Transform({-10, 0, 0}));
+    e5.AddSurface(Surface(&test));
 
     //Entity ground = Entity();
     //ground.AddSurface(Surface(&tex_cube, &cube));
@@ -347,6 +356,7 @@ int main()
             e2.Render(&sp, &view, &proj);
             e3.Render(&sp, &view, &proj);
             e4.Render(&sp, &view, &proj);
+            e5.Render(&sp, &view, &proj);
 
             //ground.Render(&sp, &view, &proj);
             //prop.Render(&sp, &view, &proj);
