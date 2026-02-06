@@ -43,8 +43,13 @@ struct
 
 struct
 {
-    uint32_t v0, v1, v2;
+    unsigned int v0, v1, v2;
 } typedef UCMESHTriangleInfo;
+
+struct
+{
+    unsigned int v0, v1, v2, v3;
+} typedef UCMESHQuadInfo;
 
 class Mesh
 {
@@ -120,6 +125,18 @@ class Mesh
 
         updatebuffers();
     }
+
+
+    /*
+    Vertices sequence:
+
+        v0 ... v1
+        .       .
+        .       .
+        v3 ... v2
+
+    */
+    inline void AddQuad(unsigned int v0, unsigned int v1, unsigned int v2, unsigned int v3) { AddTriangle(v3, v0, v1); AddTriangle(v1, v2, v3); }
 
     inline std::vector<float> GetVertices() { return vertices; }
     inline std::vector<unsigned int> GetIndices() { return indices; }
@@ -308,8 +325,8 @@ class Mesh
         fread(&vertices_count, sizeof(vertices_count), 1, f);
         if (feof(f)) goto fileerrorquit;
 
-        uint32_t triangles_count;
-        fread(&triangles_count, sizeof(triangles_count), 1, f);
+        uint32_t primitives_count;
+        fread(&primitives_count, sizeof(primitives_count), 1, f);
         if (feof(f)) goto fileerrorquit;
 
         ClearMesh();
@@ -324,15 +341,38 @@ class Mesh
             AddVertexWithUV(v.x, v.y, v.z, v.u, v.v);
         }
 
-        UCMESHTriangleInfo tri;
-        for (uint32_t i = 0; i < triangles_count; i++)
+        //UCMESHTriangleInfo tri;
+        uint8_t prim_type;
+        for (uint32_t i = 0; i < primitives_count; i++)
         {
-            fread(&tri, sizeof(tri), 1, f);
+            fread(&prim_type, sizeof(prim_type), 1, f);
             if (feof(f)) goto readmesherrorquit;
 
-            if (tri.v0 >= vertices_count || tri.v1 >= vertices_count || tri.v2 >= vertices_count) continue;
+            switch (prim_type)
+            {
+                case 0: // triangle.
+                    UCMESHTriangleInfo tri;
+                    fread(&tri, sizeof(tri), 1, f);
+                    if (feof(f)) goto readmesherrorquit;
 
-            AddTriangle(tri.v0, tri.v1, tri.v2);
+                    if (tri.v0 >= vertices_count || tri.v1 >= vertices_count || tri.v2 >= vertices_count) continue;
+
+                    AddTriangle(tri.v0, tri.v1, tri.v2);
+                    break;
+
+                case 1: // quad.
+                    UCMESHQuadInfo quad;
+                    fread(&quad, sizeof(quad), 1, f);
+                    if (feof(f)) goto readmesherrorquit;
+
+                    if (quad.v0 >= vertices_count || quad.v1 >= vertices_count || quad.v2 >= vertices_count || quad.v3 >= vertices_count) continue;
+
+                    AddQuad(quad.v0, quad.v1, quad.v2, quad.v3);
+                    break;
+
+                default:
+                    goto readmesherrorquit;
+            }
         }
 
         UnlockBuffers();
