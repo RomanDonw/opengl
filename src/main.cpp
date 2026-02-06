@@ -160,7 +160,7 @@ int main()
     cube.UnlockBuffers();
 
     Mesh test = Mesh();
-    if (test.LoadFromUCMESHFile("test.obj"))
+    if (test.LoadFromUCMESHFile("test.ucmesh"))
     {
         std::cout << "Successfully loaded model from \"test.ucmesh\" file." << std::endl;
     }
