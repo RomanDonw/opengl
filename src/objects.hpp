@@ -35,6 +35,85 @@ class ShaderProgram
     inline GLuint GetShaderProgram() { return shprog; }
 };
 
+class Transform
+{
+  private:
+    glm::vec3 position = glm::vec3(0.0f);
+    glm::vec3 rotation = glm::vec3(0.0f);
+    glm::vec3 scale = glm::vec3(1.0f);
+
+    bool lock_cache = false;
+    inline void updatecache() { if (!lock_cache) UpdateCache(); }
+
+    // cache:
+    glm::quat rot_quat;
+    glm::mat4 rot_mat;
+
+    glm::vec3 front, up, right;
+
+  public:
+    Transform(glm::vec3 pos, glm::vec3 rot, glm::vec3 scl)
+    {
+        position = pos;
+        rotation = rot;
+        scale = scl;
+        UpdateCache();
+    }
+
+    Transform(glm::vec3 pos, glm::vec3 rot)
+    {
+        position = pos;
+        rotation = rot;
+        UpdateCache();
+    }
+
+    Transform(glm::vec3 pos)
+    {
+        position = pos;
+        UpdateCache();
+    }
+
+    Transform() { UpdateCache(); }
+
+    inline bool IsCacheLocked() { return lock_cache; }
+    inline void SetLockCache(bool lock) { lock_cache = lock; }
+    inline void LockCache() { lock_cache = true; }
+    inline void UnlockCache() { lock_cache = false; }
+
+    void UpdateCache()
+    {
+        rot_quat = glm::quat(rotation);
+        rot_mat = glm::toMat4(rot_quat);
+
+        front = rot_quat * glm::vec3(0.0f, 0.0f, -1.0f);
+        up = rot_quat * glm::vec3(0.0f, 1.0f, 0.0f);
+        right = rot_quat * glm::vec3(1.0f, 0.0f, 0.0f);
+    }
+
+    inline glm::vec3 GetPosition() { return position; }
+    
+    inline glm::vec3 GetRotation() { return rotation; }
+    inline glm::quat GetRotationQuaternion() { return rot_quat; }
+    inline glm::mat4 GetRotationMatrix() { return rot_mat; }
+
+    inline glm::vec3 GetScale() { return scale; }
+
+    inline glm::vec3 GetFront() { return front; }
+    inline glm::vec3 GetUp() { return up; }
+    inline glm::vec3 GetRight() { return right; }
+
+    inline glm::mat4 GetTransformationMatrix() 
+    { return glm::scale(glm::translate(glm::mat4(1), position) * rot_mat, scale); }
+
+    inline void SetPosition(glm::vec3 v) { position = v; }
+    inline void SetRotation(glm::vec3 v) { rotation = v; updatecache(); }
+    inline void SetScale(glm::vec3 v) { scale = v; }
+
+    inline void Translate(glm::vec3 v) { position += v; }
+    inline void Rotate(glm::vec3 v) { rotation += v; updatecache(); }
+    inline void Scale(glm::vec3 v) { scale += v; }
+};
+
 struct
 {
     float x, y, z;
@@ -54,9 +133,11 @@ struct
 class Mesh
 {
   private:
-    std::vector<float> vertices;
+    //std::vector<float> vertices;
+    std::vector<glm::vec3> vertices;
     std::vector<unsigned int> indices;
-    std::vector<float> uvs;
+    //std::vector<float> uvs;
+    std::vector<glm::vec2> uvs;
 
     bool hasbuffers = false;
     GLuint VAO, VBO_VERTEX, VBO_UV, EBO;
@@ -65,7 +146,7 @@ class Mesh
     inline void updatebuffers() { if (!lockbuffers) RegenerateBuffers(); }
 
   public:
-    Mesh(std::vector<float> _vertices, std::vector<unsigned int> _indices, std::vector<float> _uvs)
+    Mesh(std::vector<glm::vec3> _vertices, std::vector<unsigned int> _indices, std::vector<glm::vec2> _uvs)
     {
         vertices = _vertices;
         indices = _indices;
@@ -101,7 +182,7 @@ class Mesh
     }
     inline void AddUV(glm::vec2 uv) { AddUV(uv.x, uv.y); }*/
 
-    void AddVertexWithUV(float x, float y, float z, float u, float v)
+    /*void AddVertexWithUV(float x, float y, float z, float u, float v)
     {
         vertices.push_back(x);
         vertices.push_back(y);
@@ -112,7 +193,10 @@ class Mesh
 
         updatebuffers();
     }
-    inline void AddVertexWithUV(glm::vec3 vertex, glm::vec2 uv) { AddVertexWithUV(vertex.x, vertex.y, vertex.z, uv.x, uv.y); }
+    inline void AddVertexWithUV(glm::vec3 vertex, glm::vec2 uv) { AddVertexWithUV(vertex.x, vertex.y, vertex.z, uv.x, uv.y); }*/
+
+    inline void AddVertexWithUV(glm::vec3 vertex, glm::vec2 uv) { vertices.push_back(vertex); uvs.push_back(uv); }
+    inline void AddVertexWithUV(float x, float y, float z, float u, float v) { AddVertexWithUV(glm::vec3(x, y, z), glm::vec2(u, v)); }
 
     //inline void AddVertexWithUV(float x, float y, float z, float u, float v) { AddVertex(x, y, z); AddUV(u, v); }
     //inline void AddVertexWithUV(glm::vec3 v, glm::vec2 uv) { AddVertex(v); AddUV(uv); }
@@ -138,10 +222,10 @@ class Mesh
     */
     inline void AddQuad(unsigned int v0, unsigned int v1, unsigned int v2, unsigned int v3) { AddTriangle(v3, v0, v1); AddTriangle(v1, v2, v3); }
 
-    inline std::vector<float> GetVertices() { return vertices; }
+    inline std::vector<glm::vec3> GetVertices() { return vertices; }
     inline std::vector<unsigned int> GetIndices() { return indices; }
     inline size_t GetIndicesCount() { return indices.size(); }
-    inline std::vector<float> GetUVs() { return uvs; }
+    inline std::vector<glm::vec2> GetUVs() { return uvs; }
 
     inline bool IsBuffersLocked() { return lockbuffers; }
     inline void SetBuffersLock(bool state) { lockbuffers = state; }
@@ -163,13 +247,13 @@ class Mesh
         glBindVertexArray(VAO);
 
         glBindBuffer(GL_ARRAY_BUFFER, VBO_VERTEX);
-        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), vertices.data(), GL_STATIC_DRAW);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), vertices.data(), GL_STATIC_DRAW);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3)/*3 * sizeof(float)*/, (void*)0);
         glEnableVertexAttribArray(0);
 
         glBindBuffer(GL_ARRAY_BUFFER, VBO_UV);
-        glBufferData(GL_ARRAY_BUFFER, uvs.size() * sizeof(float), uvs.data(), GL_STATIC_DRAW);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+        glBufferData(GL_ARRAY_BUFFER, uvs.size() * sizeof(glm::vec2), uvs.data(), GL_STATIC_DRAW);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2)/*2 * sizeof(float)*/, (void*)0);
         glEnableVertexAttribArray(1);
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
@@ -196,6 +280,18 @@ class Mesh
     }
 
     inline void RegenerateBuffers() { GenerateBuffers(); DeleteBuffers(); }
+
+    void ApplyTransformation(glm::mat4 mat)
+    {
+        for (size_t i = 0; i < vertices.size(); i++)
+        {
+            glm::vec4 v = mat * glm::vec4(vertices[i].x, vertices[i].y, vertices[i].z, 0);
+            vertices[i] = glm::vec3(v.x, v.y, v.z);
+        }
+
+        updatebuffers();
+    }
+    inline void ApplyTransformation(Transform t) { ApplyTransformation(t.GetTransformationMatrix()); }
 
     /*bool LoadFromOBJFile(std::string filename)
     {
@@ -341,7 +437,6 @@ class Mesh
             AddVertexWithUV(v.x, v.y, v.z, v.u, v.v);
         }
 
-        //UCMESHTriangleInfo tri;
         uint8_t prim_type;
         for (uint32_t i = 0; i < primitives_count; i++)
         {
@@ -687,85 +782,6 @@ class AABB
     }
 };*/
 
-class Transform
-{
-  private:
-    glm::vec3 position = glm::vec3(0.0f);
-    glm::vec3 rotation = glm::vec3(0.0f);
-    glm::vec3 scale = glm::vec3(1.0f);
-
-    bool lock_cache = false;
-    inline void updatecache() { if (!lock_cache) UpdateCache(); }
-
-    // cache:
-    glm::quat rot_quat;
-    glm::mat4 rot_mat;
-
-    glm::vec3 front, up, right;
-
-  public:
-    Transform(glm::vec3 pos, glm::vec3 rot, glm::vec3 scl)
-    {
-        position = pos;
-        rotation = rot;
-        scale = scl;
-        UpdateCache();
-    }
-
-    Transform(glm::vec3 pos, glm::vec3 rot)
-    {
-        position = pos;
-        rotation = rot;
-        UpdateCache();
-    }
-
-    Transform(glm::vec3 pos)
-    {
-        position = pos;
-        UpdateCache();
-    }
-
-    Transform() { UpdateCache(); }
-
-    inline bool IsCacheLocked() { return lock_cache; }
-    inline void SetLockCache(bool lock) { lock_cache = lock; }
-    inline void LockCache() { lock_cache = true; }
-    inline void UnlockCache() { lock_cache = false; }
-
-    void UpdateCache()
-    {
-        rot_quat = glm::quat(rotation);
-        rot_mat = glm::toMat4(rot_quat);
-
-        front = rot_quat * glm::vec3(0.0f, 0.0f, -1.0f);
-        up = rot_quat * glm::vec3(0.0f, 1.0f, 0.0f);
-        right = rot_quat * glm::vec3(1.0f, 0.0f, 0.0f);
-    }
-
-    inline glm::vec3 GetPosition() { return position; }
-    
-    inline glm::vec3 GetRotation() { return rotation; }
-    inline glm::quat GetRotationQuaternion() { return rot_quat; }
-    inline glm::mat4 GetRotationMatrix() { return rot_mat; }
-
-    inline glm::vec3 GetScale() { return scale; }
-
-    inline glm::vec3 GetFront() { return front; }
-    inline glm::vec3 GetUp() { return up; }
-    inline glm::vec3 GetRight() { return right; }
-
-    inline glm::mat4 GetTransformMatrix() 
-    { return glm::scale(glm::translate(glm::mat4(1), position) * rot_mat, scale); }
-
-    inline void SetPosition(glm::vec3 v) { position = v; }
-    inline void SetRotation(glm::vec3 v) { rotation = v; updatecache(); }
-    inline void SetScale(glm::vec3 v) { scale = v; }
-
-    inline void Translate(glm::vec3 v) { position += v; }
-    inline void Rotate(glm::vec3 v) { rotation += v; updatecache(); }
-    inline void Scale(glm::vec3 v) { scale += v; }
-};
-
 class Entity
 {
   private:
@@ -819,7 +835,7 @@ class Entity
 
         glUniformMatrix4fv(glGetUniformLocation(sp->GetShaderProgram(), "projection"), 1, GL_FALSE, glm::value_ptr(*projection));
         glUniformMatrix4fv(glGetUniformLocation(sp->GetShaderProgram(), "view"), 1, GL_FALSE, glm::value_ptr(*view));
-        glUniformMatrix4fv(glGetUniformLocation(sp->GetShaderProgram(), "model"), 1, GL_FALSE, glm::value_ptr(transform.GetTransformMatrix()));
+        glUniformMatrix4fv(glGetUniformLocation(sp->GetShaderProgram(), "model"), 1, GL_FALSE, glm::value_ptr(transform.GetTransformationMatrix()));
 
         glUniform4fv(glGetUniformLocation(sp->GetShaderProgram(), "color"), 1, glm::value_ptr(color));
 
