@@ -133,10 +133,8 @@ struct
 class Mesh
 {
   private:
-    //std::vector<float> vertices;
     std::vector<glm::vec3> vertices;
     std::vector<unsigned int> indices;
-    //std::vector<float> uvs;
     std::vector<glm::vec2> uvs;
 
     bool hasbuffers = false;
@@ -163,43 +161,8 @@ class Mesh
     inline void ClearUVs() { uvs.clear(); DeleteBuffers(); }
     inline void ClearMesh() { ClearVertices(); ClearIndices(); ClearUVs(); }
 
-    /*void AddVertex(float x, float y, float z)
-    {
-        vertices.push_back(x);
-        vertices.push_back(y);
-        vertices.push_back(z);
-
-        updatebuffers();
-    }
-    inline void AddVertex(glm::vec3 v) { AddVertex(v.x, v.y, v.z); }
-
-    void AddUV(float u, float v)
-    {
-        uvs.push_back(u);
-        uvs.push_back(v);
-
-        updatebuffers();
-    }
-    inline void AddUV(glm::vec2 uv) { AddUV(uv.x, uv.y); }*/
-
-    /*void AddVertexWithUV(float x, float y, float z, float u, float v)
-    {
-        vertices.push_back(x);
-        vertices.push_back(y);
-        vertices.push_back(z);
-
-        uvs.push_back(u);
-        uvs.push_back(v);
-
-        updatebuffers();
-    }
-    inline void AddVertexWithUV(glm::vec3 vertex, glm::vec2 uv) { AddVertexWithUV(vertex.x, vertex.y, vertex.z, uv.x, uv.y); }*/
-
     inline void AddVertexWithUV(glm::vec3 vertex, glm::vec2 uv) { vertices.push_back(vertex); uvs.push_back(uv); }
     inline void AddVertexWithUV(float x, float y, float z, float u, float v) { AddVertexWithUV(glm::vec3(x, y, z), glm::vec2(u, v)); }
-
-    //inline void AddVertexWithUV(float x, float y, float z, float u, float v) { AddVertex(x, y, z); AddUV(u, v); }
-    //inline void AddVertexWithUV(glm::vec3 v, glm::vec2 uv) { AddVertex(v); AddUV(uv); }
 
     void AddTriangle(unsigned int v0, unsigned int v1, unsigned int v2)
     {
@@ -248,12 +211,12 @@ class Mesh
 
         glBindBuffer(GL_ARRAY_BUFFER, VBO_VERTEX);
         glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), vertices.data(), GL_STATIC_DRAW);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3)/*3 * sizeof(float)*/, (void*)0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), (void*)0);
         glEnableVertexAttribArray(0);
 
         glBindBuffer(GL_ARRAY_BUFFER, VBO_UV);
         glBufferData(GL_ARRAY_BUFFER, uvs.size() * sizeof(glm::vec2), uvs.data(), GL_STATIC_DRAW);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2)/*2 * sizeof(float)*/, (void*)0);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(glm::vec2), (void*)0);
         glEnableVertexAttribArray(1);
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
@@ -292,115 +255,6 @@ class Mesh
         updatebuffers();
     }
     inline void ApplyTransformation(Transform t) { ApplyTransformation(t.GetTransformationMatrix()); }
-
-    /*bool LoadFromOBJFile(std::string filename)
-    {
-        if (!std::filesystem::is_regular_file(filename)) return false;
-
-        std::ifstream f = std::ifstream();
-        f.open(filename);
-        if (!f.good()) return false;
-
-        ClearMesh();
-        LockBuffers();
-
-        std::cout << "opened" << std::endl;
-
-        std::vector<glm::vec3> _verts;
-        std::vector<glm::vec2> _uvs;
-        unsigned int curr_tri_index = 0;
-
-        while (true)
-        {
-            std::string line;
-            std::getline(f, line, '\n');
-            if (f.eof()) break;
-
-            std::istringstream iss_line(line + " ");
-            std::string param;
-            iss_line >> param;
-            if (iss_line.eof()) continue;
-
-            if (param == "#") continue;
-            else if (param == "v")
-            {
-                float x;
-                iss_line >> x;
-                if (iss_line.eof()) continue;
-
-                float y;
-                iss_line >> y;
-                if (iss_line.eof()) continue;
-
-                float z;
-                iss_line >> z;
-                if (iss_line.eof()) continue;
-
-                _verts.push_back(glm::vec3(x, y, z));
-                std::cout << "load vertex " << x << " " << y << " " << z << std::endl;
-            }
-            else if (param == "vt")
-            {
-                float u;
-                iss_line >> u;
-                if (iss_line.eof()) continue;
-
-                float v;
-                iss_line >> v;
-                if (iss_line.eof()) continue;
-
-                _uvs.push_back(glm::vec2(u, v));
-                std::cout << "load UV " << u << " " << v << std::endl;
-            }
-            else if (param == "f")
-            {
-                std::cout << "some fragment" << std::endl;
-
-                std::vector<unsigned int> vert_indices;
-                std::vector<unsigned int> uv_indices;
-                for (int i = 0; i < 3; i++)
-                {
-                    iss_line >> param;
-                    if (iss_line.eof()) break;
-                    
-                    std::istringstream iss_param(param);
-                    std::string subparam;
-
-                    std::getline(iss_param, subparam, '/');
-                    if (iss_param.eof()) break;
-                    unsigned int vert_index;
-                    try { vert_indices.push_back(std::stol(subparam)); }
-                    catch (std::invalid_argument &e) { break; }
-
-                    std::getline(iss_param, subparam, '/');
-                    if (iss_param.eof()) break;
-                    try { uv_indices.push_back(std::stol(subparam)); }
-                    catch (std::invalid_argument &e) { break; }
-                }
-
-                std::cout << "ok " << vert_indices.size() << " " << uv_indices.size() << std::endl;
-
-                for (unsigned int i : vert_indices) if (i >= _verts.size()) { vert_indices.clear(); break; }
-                for (unsigned int i : uv_indices) if (i >= _uvs.size()) { uv_indices.clear(); break; }
-                if (vert_indices.size() != 3 || uv_indices.size() != 3) continue;
-                std::cout << "ok2 " << vert_indices.size() << " " << uv_indices.size() << std::endl;
-
-                AddVertexWithUV(_verts[vert_indices[0]], _uvs[uv_indices[0]]);
-                AddVertexWithUV(_verts[vert_indices[1]], _uvs[uv_indices[1]]);
-                AddVertexWithUV(_verts[vert_indices[2]], _uvs[uv_indices[2]]);
-                AddTriangle(curr_tri_index, curr_tri_index + 1, curr_tri_index + 2);
-                curr_tri_index += 3;
-            }
-            else std::cout << "unknown directive: \"" << param << "\"" << std::endl;
-        }
-
-        std::cout << "Vertices count: " << vertices.size() << std::endl;
-
-        GenerateBuffers();
-        UnlockBuffers();
-
-        return true;
-    }*/
 
     bool LoadFromUCMESHFile(std::string filename)
     {
@@ -662,8 +516,6 @@ enum
     FrontFace = 2,
     BothFaces = 3
 } typedef FaceCullingType;
-
-/// TODO: Добавить локальный поворот и смещение для поверхностей.
 
 class Surface
 {
