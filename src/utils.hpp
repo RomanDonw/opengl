@@ -23,9 +23,12 @@ namespace Utils
         return 0;
     }
 
-    /* vector {0; 0; 1} gives {0; 0; 0} angles,
-        {0; 0; -1} gives {0; PI; 0} angles,
-        {1; 0; 0} gives {0; PI / 2; 0} angles.
+    /*
+        Returns angles of given radius-vector relative to Z+ axis.
+        Examples:
+            vector {0; 0; 1} gives {0; 0; 0} angles,
+            {0; 0; -1} gives {0; PI; 0} angles,
+            {1; 0; 0} gives {0; PI / 2; 0} angles.
     */
     glm::vec3 angles(glm::vec3 v, float roll = 0)
     {
