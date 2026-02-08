@@ -75,6 +75,8 @@ class Transform
 
     Transform() { UpdateCache(); }
 
+    inline Transform Copy() { return *this; }
+
     inline bool IsCacheLocked() { return lock_cache; }
     inline void SetLockCache(bool lock) { lock_cache = lock; }
     inline void LockCache() { lock_cache = true; }
@@ -155,6 +157,8 @@ class Mesh
 
     Mesh() {}
     ~Mesh() { DeleteBuffers(); }
+
+    inline Mesh Copy() { return *this; }
 
     inline void ClearVertices() { vertices.clear(); DeleteBuffers(); }
     inline void ClearIndices() { indices.clear(); DeleteBuffers(); }
@@ -346,6 +350,8 @@ class Texture
   public:
     Texture() {}
     ~Texture() { DeleteTexture(); }
+
+    inline Texture Copy() { return *this; }
 
     inline bool HasTexture() { return glIsTexture(texture) == GL_TRUE; }
     inline GLuint GetTexture() { return texture; }
@@ -552,6 +558,8 @@ class Surface
 
     ~Surface() {}
 
+    inline Surface Copy() { return *this; }
+
     inline Texture *GetTexture() { return texture; }
     inline Mesh *GetMesh() { return mesh; }
     inline FaceCullingType GetFaceCullingType() { return culling; }
@@ -646,6 +654,8 @@ class Entity
     Entity() {}
 
     ~Entity() {}
+
+    inline Entity Copy() { return *this; }
 
     inline glm::vec4 GetColor() { return color; }
 
