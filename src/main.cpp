@@ -273,7 +273,7 @@ int main()
     crowbar.surfaces.push_back(Surface(&crowbar_head, &crowbar_head_tex));
     crowbar.surfaces.push_back(Surface(&crowbar_cyl, &crowbar_cyl_tex));
 
-    Transform *tr_crowbar_cyl = &crowbar.surfaces[1].transform;
+    //Transform *tr_crowbar_cyl = &crowbar.surfaces[1].transform;
 
     Entity e_cube_surfrottest = Entity(Transform({5, 4, -4}));
     e_cube_surfrottest.surfaces.push_back(Surface(Transform({1, 1, 1}), &cube));
@@ -379,7 +379,7 @@ int main()
 
             e.transform.Rotate(glm::vec3(0, glm::radians(360.0f) * delta, 0));
 
-            tr_crowbar_cyl->Rotate(glm::vec3(glm::radians(360.0f) * delta, 0, 0));
+            //tr_crowbar_cyl->Rotate(glm::vec3(glm::radians(360.0f) * delta, 0, 0));
 
             e_cube_surfrottest.surfaces[0].transform.Rotate(glm::vec3(glm::radians(360.0f) * delta, 0, 0));
             e_cube_surfrottest.transform.Rotate(glm::vec3(0, glm::radians(90.0f) * delta, 0));

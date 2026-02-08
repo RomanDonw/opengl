@@ -742,7 +742,7 @@ class Entity
 class Camera
 {
   private:
-    float neardist = 0.1;
+    float neardist = 0.05;//0.1;
     float fardist = 1000;
     float fov = glm::radians(60.0f);
     
