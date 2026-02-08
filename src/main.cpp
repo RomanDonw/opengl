@@ -62,11 +62,13 @@ void main()
 
 int initOpenGL(GLFWwindow **window);
 
-const unsigned int SCREEN_WIDTH = 1200;
 const unsigned int SCREEN_HEIGHT = 700;
 const unsigned int FPS = 60;
 const float MOUSE_SENSITIVITY = 0.1;
 const float DEFAULT_CAMERA_SPEED = 3.0;
+
+unsigned int windowWidth = 1200;
+unsigned int windowHeight = 700;
 
 float cameraSpeed = DEFAULT_CAMERA_SPEED;
 
@@ -76,15 +78,27 @@ void scrollCallback(GLFWwindow *w, double xoff, double yoff)
     if (cameraSpeed < 0) cameraSpeed = 0;
 }
 
+void resizeCallback(GLFWwindow *w, int width, int height)
+{
+    windowWidth = width;
+    windowHeight = height;
+
+    glViewport(0, 0, windowWidth, windowHeight);
+}
+
 int main()
 {
     GLFWwindow *window;
     int ret = initOpenGL(&window);
     if (ret != 0) return ret;
-    glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+
+    /*glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE);
+    glfwSetWindowOpacity(window, 0.5);*/
 
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
     glfwSetScrollCallback(window, scrollCallback);
+    glfwSetWindowSizeCallback(window, resizeCallback);
 
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
@@ -261,6 +275,10 @@ int main()
 
     Transform *tr_crowbar_cyl = &crowbar.surfaces[1].transform;
 
+    Entity e_cube_surfrottest = Entity(Transform({5, 4, -4}));
+    e_cube_surfrottest.surfaces.push_back(Surface(Transform({1, 1, 1}), &cube));
+    e_cube_surfrottest.surfaces.push_back(Surface(&cube, &tex_cube));
+
     //Entity ground = Entity();
     //ground.surfaces.push_back(Surface(&tex_cube, &cube));
     //ground.SetScale({5.0f, 1.0f, 5.0f});
@@ -286,7 +304,8 @@ int main()
     glm::vec3 v = glm::vec3(1.0f, 0.0f, 0.0f);
     std::cout << Utils::tostring(Utils::angles(v)) << std::endl;
 
-    float lastX = SCREEN_WIDTH / 2, lastY = SCREEN_HEIGHT / 2;
+    bool lmb_pressed = false;
+    float lastX = windowWidth / 2, lastY = windowHeight / 2;
     glfwSetCursorPos(window, lastX, lastY);
     glfwSetTime(0);
     double prev_time = glfwGetTime();
@@ -298,7 +317,26 @@ int main()
         {
             prev_time = glfwGetTime();
 
+            /*if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);*/
+
+            /*if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS && !lmb_pressed)
+            {
+                lmb_pressed = true;
+                std::cout << "clicked" << std::endl;
+
+                glfwSetCursorPos(window, lastX, lastY);
+
+                if (glfwGetInputMode(window, GLFW_CURSOR) == GLFW_CURSOR_NORMAL)
+                {
+                    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                }
+                else glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            }
+            else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_RELEASE && lmb_pressed) lmb_pressed = false;*/
+
             // ===== CONTROLS =====
+            if (glfwGetInputMode(window, GLFW_CURSOR) != GLFW_CURSOR_NORMAL)
             {
                 float speed;
                 if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) speed = cameraSpeed * 2.0;
@@ -342,6 +380,9 @@ int main()
             e.transform.Rotate(glm::vec3(0, glm::radians(360.0f) * delta, 0));
 
             tr_crowbar_cyl->Rotate(glm::vec3(glm::radians(360.0f) * delta, 0, 0));
+
+            e_cube_surfrottest.surfaces[0].transform.Rotate(glm::vec3(glm::radians(360.0f) * delta, 0, 0));
+            e_cube_surfrottest.transform.Rotate(glm::vec3(0, glm::radians(90.0f) * delta, 0));
 
             //e4.SetRotation(e4.GetRotation() + glm::vec3(0, glm::radians(90.0f) * delta, glm::radians(30.0f) * delta));
 
@@ -400,13 +441,15 @@ int main()
 
 
             glm::mat4 view = cam.GetViewMatrix();
-            glm::mat4 proj = cam.GetProjectionMatrix(SCREEN_WIDTH, SCREEN_HEIGHT);
+            glm::mat4 proj = cam.GetProjectionMatrix(windowWidth, windowHeight);
             e.Render(&sp, &view, &proj);
             e2.Render(&sp, &view, &proj);
             e3.Render(&sp, &view, &proj);
             e4.Render(&sp, &view, &proj);
 
             crowbar.Render(&sp, &view, &proj);
+
+            e_cube_surfrottest.Render(&sp, &view, &proj);
 
             //ground.Render(&sp, &view, &proj);
             //prop.Render(&sp, &view, &proj);
@@ -425,18 +468,32 @@ int initOpenGL(GLFWwindow **window)
 {
     if (!glfwInit())
     {
-        std::cerr << "Failed to initialize GLFW." << std::endl;
+        std::cout << "Failed to initialize GLFW." << std::endl;
         return 1;
     }
 
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     
-    GLFWwindow *w = glfwCreateWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "OpenGL App", NULL, NULL);
+    //GLFWwindow *w = glfwCreateWindow(windowWidth, windowHeight, "OpenGL", NULL, NULL);
+    GLFWmonitor *m = glfwGetPrimaryMonitor();
+    if (!m)
+    {
+        std::cout << "Can't find primary monitor. Program halted with error exit code." << std::endl;
+        glfwTerminate();
+        return 1;
+    }
+
+    int width, height;
+    glfwGetMonitorWorkarea(m, NULL, NULL, &width, &height);
+    /*windowWidth = width;
+    windowHeight = height;*/
+
+    GLFWwindow *w = glfwCreateWindow(windowWidth, windowHeight, "OpenGL", NULL/*m*/, NULL);
     if (!window)
     {
-        std::cerr << "Failed to create GLFW window" << std::endl;
+        std::cout << "Can't initialize GLFW window. Program halted with error exit code." << std::endl;
         glfwTerminate();
         return 1;
     }
@@ -444,12 +501,14 @@ int initOpenGL(GLFWwindow **window)
     
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
     {
-        std::cerr << "Failed to initialize GLAD." << std::endl;
+        std::cout << "Failed to initialize GLAD. Program halted with error exit code." << std::endl;
         glfwTerminate();
         return 1;
     }
 
     *window = w;
+    
+    glViewport(0, 0, windowWidth, windowHeight);
 
     return 0;
 }
