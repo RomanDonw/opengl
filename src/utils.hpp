@@ -23,6 +23,10 @@ namespace Utils
         return 0;
     }
 
+    /* vector {0; 0; 1} gives {0; 0; 0} angles,
+        {0; 0; -1} gives {0; PI; 0} angles,
+        {1; 0; 0} gives {0; PI / 2; 0} angles.
+    */
     glm::vec3 angles(glm::vec3 v, float roll = 0)
     {
         float len = glm::length(v);
@@ -30,6 +34,9 @@ namespace Utils
 
         return glm::vec3(glm::asin(v.y / len), glm::atan(v.x, v.z), roll);
     }
+
+    inline std::string tostring(glm::vec3 v)
+    { return "{" + std::to_string(v.x) + "; " + std::to_string(v.y) + "; " + std::to_string(v.z) + "}"; }
 
     /*
     // "Max" function overloads.

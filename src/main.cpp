@@ -159,11 +159,32 @@ int main()
     cube.GenerateBuffers();
     cube.UnlockBuffers();
 
-    Mesh test = Mesh();
-    if (test.LoadFromUCMESHFile("test.ucmesh"))
+    Mesh crowbar_head = Mesh();
+    if (crowbar_head.LoadFromUCMESHFile("./models/crowbar/head.ucmesh"))
     {
-        std::cout << "Successfully loaded model from \"test.ucmesh\" file." << std::endl;
+        std::cout << "Successfully loaded model from \"./models/crowbar/head.ucmesh\" file." << std::endl;
     }
+
+    Mesh crowbar_cyl = Mesh();
+    if (crowbar_cyl.LoadFromUCMESHFile("./models/crowbar/cyl.ucmesh"))
+    {
+        std::cout << "Successfully loaded model from \"./models/crowbar/cyl.ucmesh\" file." << std::endl;
+    }
+
+    /*Mesh vector = Mesh();
+
+    vector.LockBuffers();
+
+    vector.AddVertexWithUV(0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+    vector.AddVertexWithUV(0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+
+    vector.AddVertexWithUV(0.0f, 0.0f, 1.0f, 1.0f, 1.0f);
+    vector.AddVertexWithUV(0.0f, 0.0f, 1.0f, 1.0f, 1.0f);
+
+    vertor.AddQuad(0, 2, 3, 1);
+
+    vector.GenerateBuffers();
+    vector.UnlockBuffers();*/
 
     // ===== TEXTURES =====
 
@@ -195,6 +216,26 @@ int main()
         tex_cube.SetDefaultParametres();
     }
 
+    Texture crowbar_head_tex = Texture();
+    if (crowbar_head_tex.LoadFromUCTEXFile("./textures/crowbar/head.uctex"))
+    {
+        std::cout << "Successfully loaded texture \"./textures/crowbar/head.uctex\"!" << std::endl;
+        crowbar_head_tex.SetDefaultParametres();
+
+        crowbar_head_tex.SetTextureIntParameter(GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        crowbar_head_tex.SetTextureIntParameter(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    }
+
+    Texture crowbar_cyl_tex = Texture();
+    if (crowbar_cyl_tex.LoadFromUCTEXFile("./textures/crowbar/cyl.uctex"))
+    {
+        std::cout << "Successfully loaded texture \"./textures/crowbar/cyl.uctex\"!" << std::endl;
+        crowbar_cyl_tex.SetDefaultParametres();
+
+        crowbar_cyl_tex.SetTextureIntParameter(GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        crowbar_cyl_tex.SetTextureIntParameter(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    }
+
     /*
        ===== ===== =====
              MAIN
@@ -214,8 +255,9 @@ int main()
     Entity e4 = Entity(Transform({0, 0, -13}, glm::vec3(0), {3.0f, 1.0f, 1.0f}));
     e4.AddSurface(Surface(&tex_cube, &cube));
 
-    Entity e5 = Entity(Transform({-10, 0, 0}));
-    e5.AddSurface(Surface(&test));
+    Entity crowbar = Entity(Transform({-10, 0, 0}, {0, 0, 0}, {0.1, 0.1, 0.1}));
+    crowbar.AddSurface(Surface(&crowbar_head, &crowbar_head_tex));
+    crowbar.AddSurface(Surface(&crowbar_cyl, &crowbar_cyl_tex));
 
     //Entity ground = Entity();
     //ground.AddSurface(Surface(&tex_cube, &cube));
@@ -238,6 +280,9 @@ int main()
     float inv_mass;
     if (mass > 0) inv_mass = 1.0f / mass;
     else inv_mass = 0;*/
+
+    glm::vec3 v = glm::vec3(1.0f, 0.0f, 0.0f);
+    std::cout << Utils::tostring(Utils::angles(v)) << std::endl;
 
     float lastX = SCREEN_WIDTH / 2, lastY = SCREEN_HEIGHT / 2;
     glfwSetCursorPos(window, lastX, lastY);
@@ -356,7 +401,8 @@ int main()
             e2.Render(&sp, &view, &proj);
             e3.Render(&sp, &view, &proj);
             e4.Render(&sp, &view, &proj);
-            e5.Render(&sp, &view, &proj);
+
+            crowbar.Render(&sp, &view, &proj);
 
             //ground.Render(&sp, &view, &proj);
             //prop.Render(&sp, &view, &proj);
