@@ -243,24 +243,26 @@ int main()
     */
 
     Entity e = Entity(Transform({0.0f, 0.0f, -5.0f}));
-    e.AddSurface(Surface(&tex, &tri, NoCulling));
+    e.surfaces.push_back(Surface(&tex, &tri, NoCulling));
 
     Entity e2 = Entity();
-    e2.AddSurface(Surface(&tex16, &tri));
+    e2.surfaces.push_back(Surface(&tex16, &tri));
     e2.SetColor({1.0f, 1.0f, 1.0f, 0.5f});
 
     Entity e3 = Entity(Transform({0.0f, 0.0f, -10.0f}, glm::vec3(0.0f), {1.0f, 10.0f, 1.0f}));
-    e3.AddSurface(Surface(&tex16_rgb, &tri));
+    e3.surfaces.push_back(Surface(&tex16_rgb, &tri));
 
     Entity e4 = Entity(Transform({0, 0, -13}, glm::vec3(0), {3.0f, 1.0f, 1.0f}));
-    e4.AddSurface(Surface(&tex_cube, &cube));
+    e4.surfaces.push_back(Surface(&tex_cube, &cube));
 
     Entity crowbar = Entity(Transform({-10, 0, 0}, {0, 0, 0}, {0.1, 0.1, 0.1}));
-    crowbar.AddSurface(Surface(&crowbar_head, &crowbar_head_tex));
-    crowbar.AddSurface(Surface(&crowbar_cyl, &crowbar_cyl_tex));
+    crowbar.surfaces.push_back(Surface(&crowbar_head, &crowbar_head_tex));
+    crowbar.surfaces.push_back(Surface(&crowbar_cyl, &crowbar_cyl_tex));
+
+    Transform *tr_crowbar_cyl = &crowbar.surfaces[1].transform;
 
     //Entity ground = Entity();
-    //ground.AddSurface(Surface(&tex_cube, &cube));
+    //ground.surfaces.push_back(Surface(&tex_cube, &cube));
     //ground.SetScale({5.0f, 1.0f, 5.0f});
 
     //glm::vec3 scl = ground.GetScale();
@@ -268,7 +270,7 @@ int main()
 
     //Entity prop = Entity();
     //prop.SetPosition({1.0f, 20.0f, 0.0f});
-    //prop.AddSurface(Surface(&tex_cube, &cube));
+    //prop.surfaces.push_back(Surface(&tex_cube, &cube));
 
     //scl = prop.GetScale();
     //AABB prop_coll = AABB({-0.5f * scl.x, -0.5f * scl.y, -0.5f * scl.z}, {0.5f * scl.x, 0.5f * scl.y, 0.5f * scl.z});
@@ -338,6 +340,8 @@ int main()
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
             e.transform.Rotate(glm::vec3(0, glm::radians(360.0f) * delta, 0));
+
+            tr_crowbar_cyl->Rotate(glm::vec3(glm::radians(360.0f) * delta, 0, 0));
 
             //e4.SetRotation(e4.GetRotation() + glm::vec3(0, glm::radians(90.0f) * delta, glm::radians(30.0f) * delta));
 
