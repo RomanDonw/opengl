@@ -63,7 +63,7 @@ class Transform
     Transform(glm::vec3 pos, glm::vec3 rot)
     {
         position = pos;
-        rotation = rot;
+        rotation = Utils::wrapangles(rot);
         UpdateCache();
     }
 
@@ -84,6 +84,7 @@ class Transform
 
     void UpdateCache()
     {
+        rotation = Utils::wrapangles(rotation);
         rot_quat = glm::quat(rotation);
         rot_mat = glm::toMat4(rot_quat);
 
@@ -532,6 +533,8 @@ class Surface
 
   public:
     Transform transform = Transform();
+    glm::vec4 color = glm::vec4(1.0f);
+    bool enableRender = true;
 
     Surface(Transform tr, Texture *t, Mesh *m, FaceCullingType c)
     { transform = tr; texture = t; mesh = m; culling = c; }
@@ -641,12 +644,9 @@ class AABB
 
 class Entity
 {
-  private:
-    glm::vec4 color = glm::vec4(1.0f);
-
-    bool enable_render = true;
-
   public:
+    bool enableRender = true;
+    glm::vec4 color = glm::vec4(1.0f);
     Transform transform = Transform();
     std::vector<Surface> surfaces = std::vector<Surface>();
 
@@ -657,50 +657,22 @@ class Entity
 
     inline Entity Copy() { return *this; }
 
-    inline glm::vec4 GetColor() { return color; }
-
-    inline void SetColor(glm::vec4 c) { color = c; }
-
-    /*inline Surface GetSurface(size_t index) { return surfaces.at(index); }
-    inline size_t GetSurfacesCount() { return surfaces.size(); }
-    inline std::vector<Surface> GetSurfaces() { return surfaces; }
-    inline void ClearSurfaces() { surfaces.clear(); }
-    inline bool IsSurfaceExist(size_t index) { return index < surfaces.size(); }
-    inline void AddSurface(Surface surface) { surfaces.push_back(surface); }
-    bool SetSurface(size_t index, Surface surface)
-    {
-        if (!IsSurfaceExist(index)) return false;
-        surfaces[index] = surface;
-        return true;
-    }
-    bool RemoveSurface(size_t index)
-    {
-        if (!IsSurfaceExist(index)) return false;
-        surfaces.erase(surfaces.begin() + index);
-        return false;
-    }*/
-
-    inline bool IsRenderEnabled() { return enable_render; }
-    inline void SetRenderEnabled(bool enable) { enable_render = enable; }
-    inline void EnableRender() { enable_render = true; }
-    inline void DisableRender() { enable_render = false; }
-
     void Render(ShaderProgram *sp, glm::mat4 *view, glm::mat4 *projection)
     {
-        if (!enable_render) return;
+        if (!enableRender) return;
 
         glUseProgram(sp->GetShaderProgram());
 
         glUniformMatrix4fv(glGetUniformLocation(sp->GetShaderProgram(), "projection"), 1, GL_FALSE, glm::value_ptr(*projection));
         glUniformMatrix4fv(glGetUniformLocation(sp->GetShaderProgram(), "view"), 1, GL_FALSE, glm::value_ptr(*view));
 
-        glUniform4fv(glGetUniformLocation(sp->GetShaderProgram(), "color"), 1, glm::value_ptr(color));
-
         glUniform1i(glGetUniformLocation(sp->GetShaderProgram(), "texture"), 0);
         glActiveTexture(GL_TEXTURE0);
 
         for (Surface surface : surfaces)
         {
+            if (!surface.enableRender) continue;
+
             Texture *texture = surface.GetTexture();
             Mesh *mesh = surface.GetMesh();
             FaceCullingType culling = surface.GetFaceCullingType();
@@ -732,6 +704,8 @@ class Entity
 
             glm::mat4 modelmat = transform.GetTransformationMatrix() * surface.transform.GetTransformationMatrix();
             glUniformMatrix4fv(glGetUniformLocation(sp->GetShaderProgram(), "model"), 1, GL_FALSE, glm::value_ptr(modelmat));
+
+            glUniform4fv(glGetUniformLocation(sp->GetShaderProgram(), "color"), 1, glm::value_ptr(color * surface.color));
 
             glBindVertexArray(mesh->GetVAO());
             glDrawElements(GL_TRIANGLES, mesh->GetIndicesCount(), GL_UNSIGNED_INT, 0);

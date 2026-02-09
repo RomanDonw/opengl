@@ -8,28 +8,31 @@
 #include <cstring>
 #include <sstream>
 
-#define GLM_ENABLE_EXPERIMENTAL
-
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+
+#define GLM_ENABLE_EXPERIMENTAL
 
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp>
 
-#include <AL/al.h>
+//#include <json-c/json.h>
+
+//#include <AL/al.h>
+//#include <AL/alc.h>
 
 #include "utils.hpp"
 #include "objects.hpp"
 
-const char* vertexShaderSource = R"(
+const char *vertexShaderSource = R"(
 #version 330 core
 
-layout (location = 0) in vec3 aPos;
-layout (location = 1) in vec2 aTexCoord;
+layout (location = 0) in vec3 vertexPosition;
+layout (location = 1) in vec2 vertexTexturePosition;
 
-out vec2 TexCoord;
+out vec2 texturePosition;
 
 uniform mat4 model;
 uniform mat4 view;
@@ -37,15 +40,16 @@ uniform mat4 projection;
 
 void main()
 {
-   gl_Position = projection * view * model * vec4(aPos, 1.0);
-   TexCoord = aTexCoord;
+    texturePosition = vertexTexturePosition;
+    gl_Position = projection * view * model * vec4(vertexPosition, 1.0);
 }
 )";
 
-const char* fragmentShaderSource = R"(
+const char *fragmentShaderSource = R"(
 #version 330 core
 
-in vec2 TexCoord;
+in vec2 texturePosition;
+
 out vec4 FragColor;
 
 uniform vec4 color;
@@ -55,7 +59,7 @@ uniform sampler2D texture;
 
 void main()
 {
-    if (hasTexture) FragColor = texture2D(texture, TexCoord) * color;
+    if (hasTexture) FragColor = texture2D(texture, texturePosition) * color;
     else FragColor = color;
 }
 )";
@@ -103,6 +107,26 @@ int main()
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    /*ALCdevice *aldev = alcOpenDevice(NULL);
+    if (!aldev)
+    {
+        std::cout << "Failed to open OpenAL device." << std::endl;
+
+        glfwTerminate();
+        return 1;
+    }
+
+    ALCcontext *alctx = alcCreateContext(aldev, NULL);
+    if (!alctx)
+    {
+        std::cout << "Failed to create OpenAL context." << std::endl;
+
+        alcCloseDevice(aldev);
+        glfwTerminate();
+        return 1;
+    }
+    alcMakeContextCurrent(alctx);*/
     
     ShaderProgram sp(vertexShaderSource, fragmentShaderSource);
 
@@ -185,21 +209,6 @@ int main()
         std::cout << "Successfully loaded model from \"./models/crowbar/cyl.ucmesh\" file." << std::endl;
     }
 
-    /*Mesh vector = Mesh();
-
-    vector.LockBuffers();
-
-    vector.AddVertexWithUV(0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
-    vector.AddVertexWithUV(0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
-
-    vector.AddVertexWithUV(0.0f, 0.0f, 1.0f, 1.0f, 1.0f);
-    vector.AddVertexWithUV(0.0f, 0.0f, 1.0f, 1.0f, 1.0f);
-
-    vertor.AddQuad(0, 2, 3, 1);
-
-    vector.GenerateBuffers();
-    vector.UnlockBuffers();*/
-
     // ===== TEXTURES =====
 
     Texture tex = Texture();
@@ -261,7 +270,7 @@ int main()
 
     Entity e2 = Entity();
     e2.surfaces.push_back(Surface(&tex16, &tri));
-    e2.SetColor({1.0f, 1.0f, 1.0f, 0.5f});
+    e2.color = {1.0f, 1.0f, 1.0f, 0.5f};
 
     Entity e3 = Entity(Transform({0.0f, 0.0f, -10.0f}, glm::vec3(0.0f), {1.0f, 10.0f, 1.0f}));
     e3.surfaces.push_back(Surface(&tex16_rgb, &tri));
@@ -460,6 +469,7 @@ int main()
         glfwPollEvents();
     }
     
+    //alcCloseDevice(aldev);
     glfwTerminate();
     return 0;
 }
