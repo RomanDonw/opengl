@@ -52,6 +52,8 @@ class Transform
     glm::vec3 front, up, right;
 
   public:
+    void (*OnCacheUpdateCallback)(Transform *) = nullptr;
+
     Transform(glm::vec3 pos, glm::vec3 rot, glm::vec3 scl)
     {
         position = pos;
@@ -63,7 +65,7 @@ class Transform
     Transform(glm::vec3 pos, glm::vec3 rot)
     {
         position = pos;
-        rotation = rot;
+        rotation = Utils::wrapangles(rot);
         UpdateCache();
     }
 
@@ -84,12 +86,15 @@ class Transform
 
     void UpdateCache()
     {
+        rotation = Utils::wrapangles(rotation);
         rot_quat = glm::quat(rotation);
         rot_mat = glm::toMat4(rot_quat);
 
         front = rot_quat * glm::vec3(0.0f, 0.0f, -1.0f);
         up = rot_quat * glm::vec3(0.0f, 1.0f, 0.0f);
         right = rot_quat * glm::vec3(1.0f, 0.0f, 0.0f);
+
+        if (OnCacheUpdateCallback) OnCacheUpdateCallback(this);
     }
 
     inline glm::vec3 GetPosition() { return position; }
@@ -114,6 +119,42 @@ class Transform
     inline void Translate(glm::vec3 v) { position += v; }
     inline void Rotate(glm::vec3 v) { rotation += v; updatecache(); }
     inline void Scale(glm::vec3 v) { scale += v; }
+};
+
+enum
+{
+    UNKNOWN = 0,
+    ENTITY = 1,
+    CAMERA = 2,
+    AUDIOSOURCE = 3
+} typedef GameObjectType;
+
+class GameObject
+{
+  private:
+    GameObject *parent = nullptr;
+    std::vector<GameObject *> children = std::vector<GameObject *>();
+
+  public:
+    const GameObjectType type = UNKNOWN;
+    Transform transform = Transform();
+
+    GameObject(Transform t) { transform = t; }
+    GameObject() {}
+
+    ~GameObject() { SetParent(nullptr); }
+
+    inline GameObject Copy() { return *this; }
+
+    void SetParent(GameObject *new_parent)
+    {
+        if (parent) parent->children.erase(std::remove(parent->children.begin(), parent->children.end(), this), parent->children.end());
+        if (new_parent) new_parent->children.push_back(this);
+        parent = new_parent;
+    }
+
+    inline glm::mat4 GetParentGlobalTransformationMatrix()
+    { return parent ? parent->GetParentGlobalTransformationMatrix() * parent->transform.GetTransformationMatrix() : glm::mat4(1.0f); }
 };
 
 struct
@@ -176,7 +217,6 @@ class Mesh
 
         updatebuffers();
     }
-
 
     /*
     Vertices sequence:
@@ -532,6 +572,8 @@ class Surface
 
   public:
     Transform transform = Transform();
+    glm::vec4 color = glm::vec4(1.0f);
+    bool enableRender = true;
 
     Surface(Transform tr, Texture *t, Mesh *m, FaceCullingType c)
     { transform = tr; texture = t; mesh = m; culling = c; }
@@ -639,68 +681,56 @@ class AABB
     }
 };*/
 
-class Entity
+struct
 {
-  private:
-    glm::vec4 color = glm::vec4(1.0f);
+    bool fogEnabled;
+    float fogStartDistance;
+    float fogEndDistance;
+    glm::vec3 fogColor;
+} typedef FogRenderSettings;
 
-    bool enable_render = true;
-
+class Entity : public GameObject
+{
   public:
-    Transform transform = Transform();
+    const GameObjectType type = ENTITY;
+
+    bool enableRender = true;
+    glm::vec4 color = glm::vec4(1.0f);
     std::vector<Surface> surfaces = std::vector<Surface>();
 
-    Entity(Transform t) { transform = t; }
-    Entity() {}
+    Entity(Transform t) : GameObject(t) {}
+    Entity() : GameObject() {}
 
     ~Entity() {}
 
-    inline Entity Copy() { return *this; }
-
-    inline glm::vec4 GetColor() { return color; }
-
-    inline void SetColor(glm::vec4 c) { color = c; }
-
-    /*inline Surface GetSurface(size_t index) { return surfaces.at(index); }
-    inline size_t GetSurfacesCount() { return surfaces.size(); }
-    inline std::vector<Surface> GetSurfaces() { return surfaces; }
-    inline void ClearSurfaces() { surfaces.clear(); }
-    inline bool IsSurfaceExist(size_t index) { return index < surfaces.size(); }
-    inline void AddSurface(Surface surface) { surfaces.push_back(surface); }
-    bool SetSurface(size_t index, Surface surface)
+    void Render(ShaderProgram *sp, glm::mat4 *view, glm::mat4 *projection, Transform *cameraTransform, FogRenderSettings *fogRenderSettings)
     {
-        if (!IsSurfaceExist(index)) return false;
-        surfaces[index] = surface;
-        return true;
-    }
-    bool RemoveSurface(size_t index)
-    {
-        if (!IsSurfaceExist(index)) return false;
-        surfaces.erase(surfaces.begin() + index);
-        return false;
-    }*/
-
-    inline bool IsRenderEnabled() { return enable_render; }
-    inline void SetRenderEnabled(bool enable) { enable_render = enable; }
-    inline void EnableRender() { enable_render = true; }
-    inline void DisableRender() { enable_render = false; }
-
-    void Render(ShaderProgram *sp, glm::mat4 *view, glm::mat4 *projection)
-    {
-        if (!enable_render) return;
+        if (!enableRender) return;
 
         glUseProgram(sp->GetShaderProgram());
 
         glUniformMatrix4fv(glGetUniformLocation(sp->GetShaderProgram(), "projection"), 1, GL_FALSE, glm::value_ptr(*projection));
         glUniformMatrix4fv(glGetUniformLocation(sp->GetShaderProgram(), "view"), 1, GL_FALSE, glm::value_ptr(*view));
 
-        glUniform4fv(glGetUniformLocation(sp->GetShaderProgram(), "color"), 1, glm::value_ptr(color));
-
         glUniform1i(glGetUniformLocation(sp->GetShaderProgram(), "texture"), 0);
         glActiveTexture(GL_TEXTURE0);
 
+        glUniform3fv(glGetUniformLocation(sp->GetShaderProgram(), "cameraPosition"), 1, glm::value_ptr(cameraTransform->GetPosition()));
+        glUniform3fv(glGetUniformLocation(sp->GetShaderProgram(), "cameraRotation"), 1, glm::value_ptr(cameraTransform->GetRotation()));
+
+        glUniform3fv(glGetUniformLocation(sp->GetShaderProgram(), "cameraFront"), 1, glm::value_ptr(cameraTransform->GetFront()));
+        glUniform3fv(glGetUniformLocation(sp->GetShaderProgram(), "cameraUp"), 1, glm::value_ptr(cameraTransform->GetUp()));
+        glUniform3fv(glGetUniformLocation(sp->GetShaderProgram(), "cameraRight"), 1, glm::value_ptr(cameraTransform->GetRight()));
+
+        glUniform1i(glGetUniformLocation(sp->GetShaderProgram(), "fogEnabled"), fogRenderSettings->fogEnabled ? GL_TRUE : GL_FALSE);
+        glUniform1f(glGetUniformLocation(sp->GetShaderProgram(), "fogStartDistance"), fogRenderSettings->fogStartDistance);
+        glUniform1f(glGetUniformLocation(sp->GetShaderProgram(), "fogEndDistance"), fogRenderSettings->fogEndDistance);
+        glUniform3fv(glGetUniformLocation(sp->GetShaderProgram(), "fogColor"), 1, glm::value_ptr(fogRenderSettings->fogColor));
+
         for (Surface surface : surfaces)
         {
+            if (!surface.enableRender) continue;
+
             Texture *texture = surface.GetTexture();
             Mesh *mesh = surface.GetMesh();
             FaceCullingType culling = surface.GetFaceCullingType();
@@ -730,16 +760,18 @@ class Entity
             }
             else glUniform1i(glGetUniformLocation(sp->GetShaderProgram(), "hasTexture"), GL_FALSE);
 
-            glm::mat4 modelmat = transform.GetTransformationMatrix() * surface.transform.GetTransformationMatrix();
+            glm::mat4 modelmat = GetParentGlobalTransformationMatrix() * transform.GetTransformationMatrix() * surface.transform.GetTransformationMatrix();
             glUniformMatrix4fv(glGetUniformLocation(sp->GetShaderProgram(), "model"), 1, GL_FALSE, glm::value_ptr(modelmat));
 
+            glUniform4fv(glGetUniformLocation(sp->GetShaderProgram(), "color"), 1, glm::value_ptr(color * surface.color));
+
             glBindVertexArray(mesh->GetVAO());
-            glDrawElements(GL_TRIANGLES, mesh->GetIndicesCount(), GL_UNSIGNED_INT, 0);
+            glDrawElements(GL_TRIANGLES, mesh->GetIndicesCount(), GL_UNSIGNED_INT, nullptr);
         }
     }
 };
 
-class Camera
+class Camera : public GameObject
 {
   private:
     float neardist = 0.05;//0.1;
@@ -747,7 +779,7 @@ class Camera
     float fov = glm::radians(60.0f);
     
   public:
-    Transform transform = Transform();
+    const GameObjectType type = CAMERA;
 
     Camera(float _fov, float _neardist, float _fardist)
     {

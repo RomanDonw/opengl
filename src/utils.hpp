@@ -41,6 +41,8 @@ namespace Utils
     inline std::string tostring(glm::vec3 v)
     { return "{" + std::to_string(v.x) + "; " + std::to_string(v.y) + "; " + std::to_string(v.z) + "}"; }
 
+    inline glm::vec3 wrapangles(glm::vec3 euler) { return glm::vec3(fmod(euler.x, 360.0f), fmod(euler.y, 360.0f), fmod(euler.z, 360.0f)); }
+
     /*
     // "Max" function overloads.
 
