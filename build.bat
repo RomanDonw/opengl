@@ -6,7 +6,7 @@ set SRC=.\src
 
 echo Building main...
 : g++ -static -I%INCLUDE% -L%LIB% %SRC%\main.cpp -o .\main.exe -lglad -lglfw3 -lopengl32 -lgdi32
-g++ -c -I%INCLUDE% -L%LIB% %SRC%\main.cpp -o main.o -static-libgcc -static-libstdc++ -lopenal
+g++ -c -I%INCLUDE% -L%LIB% %SRC%\main.cpp -o main.o -static -static-libgcc -static-libstdc++ -lopenal
 
 if not exist .\main.o goto on_error
     echo Linking main...

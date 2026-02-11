@@ -7,6 +7,7 @@
 #include <cstdint>
 #include <cstring>
 #include <sstream>
+#include <algorithm>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -17,6 +18,8 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp>
+
+#include <AL/al.h>
 
 //#include <json-c/json.h>
 
@@ -32,6 +35,7 @@ const char *vertexShaderSource = R"(
 layout (location = 0) in vec3 vertexPosition;
 layout (location = 1) in vec2 vertexTexturePosition;
 
+out vec3 position;
 out vec2 texturePosition;
 
 uniform mat4 model;
@@ -40,7 +44,9 @@ uniform mat4 projection;
 
 void main()
 {
+    position = vertexPosition;
     texturePosition = vertexTexturePosition;
+
     gl_Position = projection * view * model * vec4(vertexPosition, 1.0);
 }
 )";
@@ -48,6 +54,7 @@ void main()
 const char *fragmentShaderSource = R"(
 #version 330 core
 
+in vec3 position;
 in vec2 texturePosition;
 
 out vec4 FragColor;
@@ -57,10 +64,30 @@ uniform vec4 color;
 uniform bool hasTexture;
 uniform sampler2D texture;
 
+uniform bool fogEnabled;
+uniform float fogStartDistance;
+uniform float fogEndDistance;
+uniform vec3 fogColor;
+
+uniform vec3 cameraPosition;
+uniform vec3 cameraRotation;
+
+uniform vec3 cameraFront;
+uniform vec3 cameraUp;
+uniform vec3 cameraRight;
+
 void main()
 {
-    if (hasTexture) FragColor = texture2D(texture, texturePosition) * color;
-    else FragColor = color;
+    vec3 reltocam = position - cameraPosition;
+    float distfromcam = length(reltocam);
+
+    float fogIntensity = ((fogEndDistance - fogStartDistance) == 0) ? min(1.0, max(0.0, (distfromcam - fogStartDistance) / (fogEndDistance - fogStartDistance))) : 0.0;
+
+    //FragColor = mix((hasTexture ? texture2D(texture, texturePosition) : vec4(1.0)) * color, fogColor, fogEnabled ? fogIntensity : 0.0);
+    //FragColor = (hasTexture ? texture2D(texture, texturePosition) : vec4(1.0)) * color;
+
+    //FragColor = mix((hasTexture ? texture2D(texture, texturePosition) : vec4(1.0)) * color, vec4(fogColor, 1.0), 0.0);
+    FragColor = mix((hasTexture ? texture2D(texture, texturePosition) : vec4(1.0)) * color, vec4(fogColor, 1.0), fogEnabled ? fogIntensity : 0.0);
 }
 )";
 
@@ -313,6 +340,12 @@ int main()
     glm::vec3 v = glm::vec3(1.0f, 0.0f, 0.0f);
     std::cout << Utils::tostring(Utils::angles(v)) << std::endl;
 
+    FogRenderSettings fogs;
+    fogs.fogEnabled = true;
+    fogs.fogColor = glm::vec3(1.0f, 1.0f, 1.0f);
+    fogs.fogStartDistance = 0;
+    fogs.fogEndDistance = 5;
+
     bool lmb_pressed = false;
     float lastX = windowWidth / 2, lastY = windowHeight / 2;
     glfwSetCursorPos(window, lastX, lastY);
@@ -451,14 +484,15 @@ int main()
 
             glm::mat4 view = cam.GetViewMatrix();
             glm::mat4 proj = cam.GetProjectionMatrix(windowWidth, windowHeight);
-            e.Render(&sp, &view, &proj);
-            e2.Render(&sp, &view, &proj);
-            e3.Render(&sp, &view, &proj);
-            e4.Render(&sp, &view, &proj);
 
-            crowbar.Render(&sp, &view, &proj);
+            e.Render(&sp, &view, &proj, &cam.transform, &fogs);
+            e2.Render(&sp, &view, &proj, &cam.transform, &fogs);
+            e3.Render(&sp, &view, &proj, &cam.transform, &fogs);
+            e4.Render(&sp, &view, &proj, &cam.transform, &fogs);
 
-            e_cube_surfrottest.Render(&sp, &view, &proj);
+            crowbar.Render(&sp, &view, &proj, &cam.transform, &fogs);
+
+            e_cube_surfrottest.Render(&sp, &view, &proj, &cam.transform, &fogs);
 
             //ground.Render(&sp, &view, &proj);
             //prop.Render(&sp, &view, &proj);
