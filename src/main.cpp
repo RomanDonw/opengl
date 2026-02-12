@@ -9,6 +9,7 @@
 #include <sstream>
 #include <algorithm>
 #include <functional>
+#include <cstdlib>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -156,7 +157,16 @@ int main()
     }
     alcMakeContextCurrent(alctx);*/
     
-    ShaderProgram sp(vertexShaderSource, fragmentShaderSource);
+    //ShaderProgram sp(vertexShaderSource, fragmentShaderSource);
+    ShaderProgram sp;
+    
+    sp.LoadVertexShader(vertexShaderSource);
+    sp.LoadFragmentShader(fragmentShaderSource);
+
+    std::string log;
+    if (!sp.CompileVertexShader(&log)) std::cout << "Compiling vertex shader error: \"" << log << "\"." << std::endl;
+    if (!sp.CompileFragmentShader(&log)) std::cout << "Compiling fragment shader error: \"" << log << "\"." << std::endl;
+    if (!sp.LinkShaderProgram(&log)) std::cout << "Linking shader program error: \"" << log << "\"." << std::endl;
 
     Camera cam = Camera();
 

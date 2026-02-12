@@ -3,36 +3,190 @@
 class ShaderProgram
 {
   private:
-    GLuint shprog = 0;
+    GLuint shaderProgram;
+    bool hasShaderProgram = false;
+
+    GLuint vertexShader;
+    bool hasVertexShader = false;
+    bool vertexShaderCompiled = false;
+
+    GLuint fragmentShader;
+    bool hasFragmentShader = false;
+    bool fragmentShaderCompiled = false;
 
   public:
-    ShaderProgram(std::string vshader, std::string fshader)
-    {
-        const char *vsrc = vshader.c_str();
-        GLuint vs = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vs, 1, &vsrc, NULL);
-        glCompileShader(vs);
-
-        const char *fsrc = fshader.c_str();
-        GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(fs, 1, &fsrc, NULL);
-        glCompileShader(fs);
-
-        shprog = glCreateProgram();
-        glAttachShader(shprog, vs);
-        glAttachShader(shprog, fs);
-        glLinkProgram(shprog);
-
-        glDeleteShader(vs);
-        glDeleteShader(fs);
-    }
+    ShaderProgram() {}
 
     ~ShaderProgram()
     {
-        glDeleteProgram(shprog);
+        DeleteVertexShader();
+        DeleteFragmentShader();
+
+        DeleteShaderProgram();
     }
 
-    inline GLuint GetShaderProgram() { return shprog; }
+    inline bool HasShaderProgram() { return hasShaderProgram; }
+    inline bool HasVertexShader() { return hasVertexShader; }
+    inline bool HasFragmentShader() { return hasFragmentShader; }
+
+    inline bool IsVertexShaderCompiled() { return vertexShaderCompiled; }
+    inline bool IsFragmentShaderCompiled() { return fragmentShaderCompiled; }
+
+    inline GLuint GetShaderProgram() { return shaderProgram; }
+    inline GLuint GetVertexShader() { return vertexShader; }
+    inline GLuint GetFragmentShader() { return fragmentShader; }
+
+    bool DeleteShaderProgram()
+    {
+        if (!HasShaderProgram()) return false;
+        glDeleteProgram(shaderProgram);
+        hasShaderProgram = false;
+        return true;
+    }
+
+    bool DeleteVertexShader()
+    {
+        if (!HasVertexShader()) return false;
+        glDeleteShader(vertexShader);
+        hasVertexShader = false;
+        vertexShaderCompiled = false;
+        return true;
+    }
+
+    bool DeleteFragmentShader()
+    {
+        if (!HasFragmentShader()) return false;
+        glDeleteShader(fragmentShader);
+        hasFragmentShader = false;
+        fragmentShaderCompiled = false;
+        return true;
+    }
+
+    bool LoadVertexShader(std::string source)
+    {
+        if (HasVertexShader()) return false;
+
+        const char *source_ptr = source.c_str();
+        vertexShader = glCreateShader(GL_VERTEX_SHADER);
+        glShaderSource(vertexShader, 1, &source_ptr, NULL);
+        hasVertexShader = true;
+
+        return true;
+    }
+
+    bool LoadFragmentShader(std::string source)
+    {
+        if (HasFragmentShader()) return false;
+
+        const char *source_ptr = source.c_str();
+        fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+        glShaderSource(fragmentShader, 1, &source_ptr, NULL);
+        hasFragmentShader = true;
+
+        return true;
+    }
+
+    // `errorlog` can be NULL (nullptr).
+    bool CompileVertexShader(std::string *errorlog)
+    {
+        if (errorlog) *errorlog = "";
+        if (!HasVertexShader() || IsVertexShaderCompiled()) { return false; }
+
+        glCompileShader(vertexShader);
+
+        GLint success;
+        glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+        if (success == GL_FALSE)
+        {
+            GLint length;
+            glGetShaderiv(vertexShader, GL_INFO_LOG_LENGTH, &length);
+            
+            GLchar *log = (GLchar *)malloc(length * sizeof(GLchar));
+            if (!log) return false;
+
+            glGetShaderInfoLog(vertexShader, length, &length, log);
+
+            if (errorlog) *errorlog = std::string(log);
+            //std::cout << log << std::endl;
+
+            free(log);
+            DeleteVertexShader(); // is neccessary to need to delete the shader when compiling error occured?... i think yes.
+
+            return false;
+        }
+        vertexShaderCompiled = true;
+
+        return true;
+    }
+
+    // `errorlog` can be NULL (nullptr).
+    bool CompileFragmentShader(std::string *errorlog)
+    {
+        if (errorlog) *errorlog = "";
+        if (!HasFragmentShader() || IsFragmentShaderCompiled()) { return false; }
+
+        glCompileShader(fragmentShader);
+
+        GLint success;
+        glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
+        if (success == GL_FALSE)
+        {
+            GLint length;
+            glGetShaderiv(fragmentShader, GL_INFO_LOG_LENGTH, &length);
+            
+            GLchar *log = (GLchar *)malloc(length * sizeof(GLchar));
+            if (!log) return false;
+
+            glGetShaderInfoLog(fragmentShader, length, &length, log);
+
+            if (errorlog) *errorlog = std::string(log);
+            //std::cout << log << std::endl;
+
+            free(log);
+            DeleteFragmentShader(); // is neccessary to need to delete the shader when compiling error occured?... i think yes.
+
+            return false;
+        }
+        fragmentShaderCompiled = true;
+
+        return true;
+    }
+
+    // `errorlog` can be NULL (nullptr).
+    bool LinkShaderProgram(std::string *errorlog)
+    {
+        if (errorlog) *errorlog = "";
+        if (HasShaderProgram() || !HasVertexShader() || !HasFragmentShader()) return false;
+
+        hasShaderProgram = true;
+        shaderProgram = glCreateProgram();
+
+        glAttachShader(shaderProgram, vertexShader);
+        glAttachShader(shaderProgram, fragmentShader);
+
+        glLinkProgram(shaderProgram);
+
+        GLint success;
+        glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+        if (success == GL_FALSE)
+        {
+            GLint length;
+            glGetProgramiv(shaderProgram, GL_INFO_LOG_LENGTH, &length);
+
+            GLchar *log = (GLchar *)malloc(length * sizeof(GLchar));
+            if (!log) return false;
+
+            glGetProgramInfoLog(shaderProgram, length, &length, log);
+
+            if (errorlog) *errorlog = log;
+
+            free(log);
+
+            return false;
+        }
+
+        return true;
+    }
 };
 
 class Transform
