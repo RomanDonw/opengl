@@ -43,6 +43,9 @@ namespace Utils
 
     inline glm::vec3 wrapangles(glm::vec3 euler) { return glm::vec3(fmod(euler.x, 360.0f), fmod(euler.y, 360.0f), fmod(euler.z, 360.0f)); }
 
+    inline size_t min(size_t a, size_t b) { return a < b ? a : b; }
+    inline size_t max(size_t a, size_t b) { return a > b ? a : b; }
+
     /*
     // "Max" function overloads.
 

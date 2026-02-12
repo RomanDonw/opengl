@@ -51,8 +51,11 @@ class Transform
 
     glm::vec3 front, up, right;
 
+    void callback_onchange() { for (std::function<void (Transform *)> callback : onTransformChangeCallbacks) callback(this); }
+
   public:
-    void (*OnCacheUpdateCallback)(Transform *) = nullptr;
+    //std::vector<void (*)(Transform *)> onTransformChangeCallbacks = std::vector<void (*)(Transform *)>();
+    std::vector<std::function<void (Transform *)>> onTransformChangeCallbacks = std::vector<std::function<void (Transform *)>>();
 
     Transform(glm::vec3 pos, glm::vec3 rot, glm::vec3 scl)
     {
@@ -94,7 +97,7 @@ class Transform
         up = rot_quat * glm::vec3(0.0f, 1.0f, 0.0f);
         right = rot_quat * glm::vec3(1.0f, 0.0f, 0.0f);
 
-        if (OnCacheUpdateCallback) OnCacheUpdateCallback(this);
+        callback_onchange();
     }
 
     inline glm::vec3 GetPosition() { return position; }
@@ -112,13 +115,13 @@ class Transform
     inline glm::mat4 GetTransformationMatrix() 
     { return glm::scale(glm::translate(glm::mat4(1), position) * rot_mat, scale); }
 
-    inline void SetPosition(glm::vec3 v) { position = v; }
+    inline void SetPosition(glm::vec3 v) { position = v; callback_onchange(); }
     inline void SetRotation(glm::vec3 v) { rotation = v; updatecache(); }
-    inline void SetScale(glm::vec3 v) { scale = v; }
+    inline void SetScale(glm::vec3 v) { scale = v; callback_onchange(); }
 
-    inline void Translate(glm::vec3 v) { position += v; }
+    inline void Translate(glm::vec3 v) { position += v; callback_onchange(); }
     inline void Rotate(glm::vec3 v) { rotation += v; updatecache(); }
-    inline void Scale(glm::vec3 v) { scale += v; }
+    inline void Scale(glm::vec3 v) { scale += v; callback_onchange(); }
 };
 
 enum
@@ -385,7 +388,8 @@ class Mesh
 class Texture
 {
   private:
-    GLuint texture = 0;
+    bool hasTexture = false;
+    GLuint texture;
 
   public:
     Texture() {}
@@ -393,14 +397,14 @@ class Texture
 
     inline Texture Copy() { return *this; }
 
-    inline bool HasTexture() { return glIsTexture(texture) == GL_TRUE; }
+    inline bool HasTexture() { return hasTexture; } /*{ return glIsTexture(texture) == GL_TRUE; }*/
     inline GLuint GetTexture() { return texture; }
 
     bool DeleteTexture()
     {
         if (!HasTexture()) return false;
         glDeleteTextures(1, &texture);
-        texture = 0;
+        hasTexture = false;
         return true;
     }
 
@@ -416,16 +420,16 @@ class Texture
         if (feof(f) || strncmp(sig, "UCTEX", 5)) { fclose(f); return false; }
 
         uint16_t version;
-        fread(&version, sizeof(uint16_t), 1, f);
+        fread(&version, sizeof(version), 1, f);
         if (feof(f) || version != 0) { fclose(f); return false; }
 
         uint8_t type;
-        fread(&type, sizeof(uint8_t), 1, f);
+        fread(&type, sizeof(type), 1, f);
         if (feof(f) || (type > 3)) { fclose(f); return false; }
 
         uint16_t width16, height16;
-        fread(&width16, sizeof(uint16_t), 1, f);
-        fread(&height16, sizeof(uint16_t), 1, f);
+        fread(&width16, sizeof(width16), 1, f);
+        fread(&height16, sizeof(height16), 1, f);
         if (feof(f)) { fclose(f); return false; }
         uint32_t width = width16 + 1;
         uint32_t height = height16 + 1;
@@ -434,6 +438,7 @@ class Texture
 
         glGenTextures(1, &texture);
         glBindTexture(GL_TEXTURE_2D, texture);
+        hasTexture = true;
 
         bool texmiss_y = false;
         std::vector<uint32_t> pixels;
@@ -810,4 +815,247 @@ class Camera : public GameObject
     { return glm::lookAt(transform.GetPosition(), transform.GetPosition() + transform.GetFront(), transform.GetUp()); }
     inline glm::mat4 GetProjectionMatrix(unsigned int screen_width, unsigned int screen_height)
     { return glm::perspective(fov, (float)screen_width / (float)screen_height, neardist, fardist); }
+};
+
+/*
+enum
+{
+    NODATA = 0,
+
+    UNSIGNED_PCM_8_MONO = 1,
+    UNSIGNED_PCM_8_STEREO = 2,
+
+    SIGNED_PCM_16_MONO = 3,
+    SIGNED_PCM_16_STEREO = 4
+} typedef AudioClipType;
+
+class AudioClip
+{
+  private:
+    void *data = nullptr;
+    size_t size = 0;
+
+    AudioClipType type = NODATA;
+    uint16_t frequency = 0;
+    size_t length = 0; // in (both channel) samples.
+
+  public:
+    AudioClip() {}
+    ~AudioClip()
+    {
+        if (HasBuffer()) free(data);
+    }
+
+    inline bool HasBuffer() { return data; }
+    inline AudioClipType GetType() { return type; }
+
+    static uint8_t GetTypeSampleSizeInBytes(AudioClipType t)
+    {
+        switch (t)
+        {
+            case UNSIGNED_PCM_8_MONO:
+                return sizeof(uint8_t);
+
+            case UNSIGNED_PCM_8_STEREO:
+                return 2 * sizeof(uint8_t);
+
+            case SIGNED_PCM_16_MONO:
+                return sizeof(int16_t);
+
+            case SIGNED_PCM_16_STEREO:
+                return 2 * sizeof(int16_t);
+        }
+
+        return 0;
+    }
+
+    inline size_t GetBufferSizeInBytes() { return GetTypeSampleSizeInBytes(type) * length * frequency; }
+
+    bool CreateBuffer(size_t len, AudioClipType t, uint16_t freq)
+    {
+        if (HasBuffer() || t == NODATA || len == 0 || freq == 0) return false;
+
+        void *new_data = malloc(len * GetTypeSampleSizeInBytes(t) * freq);
+        if (!new_data) return false;
+        data = new_data;
+
+        type = t;
+        length = len;
+        frequency = freq;
+
+        return true;
+    }
+
+    bool DeleteBuffer()
+    {
+        if (!data) return false;
+
+        free(data);
+
+        type = NODATA;
+        length = 0;
+        frequency = 0;
+
+        return true;
+    }
+
+    bool SetBufferData(size_t srcbuffsize, void *srcbuff)
+    {
+        if (!HasBuffer()) return false;
+
+        memcpy(data, srcbuff, min(srcbuffsize, GetBufferSizeInBytes()));
+
+        return true;
+    }
+};*/
+
+class AudioClip
+{
+  private:
+    ALuint buffer;
+    bool hasBuffer = false;
+
+  public:
+    AudioClip() {}
+    ~AudioClip() { DeleteBuffer(); }
+
+    inline bool HasBuffer() { return hasBuffer; }
+    inline ALuint GetBuffer() { return buffer; }
+    bool DeleteBuffer()
+    {
+        if (!HasBuffer()) return false;
+        alDeleteBuffers(1, &buffer);
+        hasBuffer = false;
+        return true;
+    }
+    bool LoadUCSOUNDFromFile(std::string filename)
+    {
+        if (!std::filesystem::is_regular_file(filename)) return false;
+
+        FILE *f = fopen(filename.c_str(), "rb");
+        if (!f) return false;
+
+        char sig[7];
+        fread(&sig, sizeof(char), 7, f);
+        if (feof(f) || strncmp(sig, "UCSOUND", 7)) { fclose(f); return false; }
+
+        uint16_t version;
+        fread(&version, sizeof(version), 1, f);
+        if (feof(f) || version != 0) { fclose(f); return false; }
+
+        uint8_t type;
+        fread(&type, sizeof(type), 1, f);
+        if (feof(f)) { fclose(f); return false; }
+
+        ALenum altype;
+        switch (type)
+        {
+            case 0: // mono 8 bit/sample (unsigned 8-bit).
+                altype = AL_FORMAT_MONO8;
+                break;
+
+            case 1: // mono 16 bit/sample (signed 16-bit).
+                altype = AL_FORMAT_MONO16;
+                break;
+
+            case 2: // stereo 8 bit/sample (unsigned 8-bit).
+                altype = AL_FORMAT_STEREO8;
+                break;
+
+            case 3: // stereo 16 bit/sample (signed 16-bit).
+                altype = AL_FORMAT_STEREO16;
+                break;
+
+            default:
+                return false;
+        }
+
+        uint16_t frequency;
+        fread(&frequency, sizeof(frequency), 1, f);
+        if (feof(f)) { fclose(f); return false; }
+
+        alGenBuffers(1, &buffer);
+        hasBuffer = true;
+
+        std::vector<uint8_t> data = std::vector<uint8_t>();
+        while (true)
+        {
+            uint8_t byte;
+            fread(&byte, sizeof(byte), 1, f);
+            if (feof(f)) break;
+
+            data.push_back(byte);
+        }
+
+        alBufferData(buffer, altype, data.data(), data.size(), frequency);
+
+        return true;
+    }
+};
+
+class AudioSource : public GameObject
+{
+  private:
+    ALuint source;
+
+    void callback(Transform *t)
+    {
+    }
+
+    void constructor()
+    {
+        alGenSources(1, &source);
+        transform.onTransformChangeCallbacks.push_back([this](Transform *t)
+        {
+           alSourcefv(source, AL_POSITION, glm::value_ptr(t->GetPosition())); 
+        });
+    }
+
+  public:
+    const GameObjectType type = AUDIOSOURCE;
+
+    AudioSource(glm::vec3 pos) : GameObject(pos) { constructor(); }
+    AudioSource() : GameObject() { constructor(); }
+
+    ~AudioSource() { alDeleteSources(1, &source); }
+
+    float GetPitch()
+    {
+        float ret;
+        alGetSourcef(source, AL_PITCH, &ret);
+        return ret;
+    }
+    inline void SetPitch(float value) { alSourcef(source, AL_PITCH, value); }
+
+    float GetGain()
+    {
+        float ret;
+        alGetSourcef(source, AL_GAIN, &ret);
+        return ret;
+    }
+    inline void SetGain(float value) { alSourcef(source, AL_GAIN, value); }
+
+    float GetMinGain()
+    {
+        float ret;
+        alGetSourcef(source, AL_MIN_GAIN, &ret);
+        return ret;
+    }
+    inline void SetMinGain(float value) { alSourcef(source, AL_MIN_GAIN, value); }
+
+    float GetMaxGain()
+    {
+        float ret;
+        alGetSourcef(source, AL_MAX_GAIN, &ret);
+        return ret;
+    }
+    inline void SetMaxGain(float value) { alSourcef(source, AL_MAX_GAIN, value); }
+
+    float GetMaxDistance()
+    {
+        float ret;
+        alGetSourcef(source, AL_MAX_DISTANCE, &ret);
+        return ret;
+    }
+    inline void SetMaxDistance(float value) { alSourcef(source, AL_MAX_DISTANCE, value); }
 };

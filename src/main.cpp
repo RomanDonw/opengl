@@ -8,6 +8,7 @@
 #include <cstring>
 #include <sstream>
 #include <algorithm>
+#include <functional>
 
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
@@ -197,8 +198,6 @@ int main()
     cube.AddVertexWithUV(0.5, 0.5, 0.5, 2 / 4.0f, 1 / 2.0f); // 13 (at 7)
     cube.AddVertexWithUV(-0.5, 0.5, -0.5, 1 / 4.0f, 2 / 2.0f); // 14 (at 9)
     cube.AddVertexWithUV(0.5, 0.5, -0.5, 2 / 4.0f, 2 / 2.0f); // 15 (at 6)
-
-    // empty commit.
 
     // Front face.
     cube.AddTriangle(0, 2, 6);
