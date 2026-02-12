@@ -87,7 +87,7 @@ class ShaderProgram
     }
 
     // `errorlog` can be NULL (nullptr).
-    bool CompileVertexShader(std::string *errorlog)
+    bool CompileVertexShader(std::string *errorlog = nullptr)
     {
         if (errorlog) *errorlog = "";
         if (!HasVertexShader() || IsVertexShaderCompiled()) { return false; }
@@ -107,7 +107,6 @@ class ShaderProgram
             glGetShaderInfoLog(vertexShader, length, &length, log);
 
             if (errorlog) *errorlog = std::string(log);
-            //std::cout << log << std::endl;
 
             free(log);
             DeleteVertexShader(); // is neccessary to need to delete the shader when compiling error occured?... i think yes.
@@ -119,8 +118,7 @@ class ShaderProgram
         return true;
     }
 
-    // `errorlog` can be NULL (nullptr).
-    bool CompileFragmentShader(std::string *errorlog)
+    bool CompileFragmentShader(std::string *errorlog = nullptr)
     {
         if (errorlog) *errorlog = "";
         if (!HasFragmentShader() || IsFragmentShaderCompiled()) { return false; }
@@ -140,7 +138,6 @@ class ShaderProgram
             glGetShaderInfoLog(fragmentShader, length, &length, log);
 
             if (errorlog) *errorlog = std::string(log);
-            //std::cout << log << std::endl;
 
             free(log);
             DeleteFragmentShader(); // is neccessary to need to delete the shader when compiling error occured?... i think yes.
@@ -152,8 +149,7 @@ class ShaderProgram
         return true;
     }
 
-    // `errorlog` can be NULL (nullptr).
-    bool LinkShaderProgram(std::string *errorlog)
+    bool LinkShaderProgram(std::string *errorlog = nullptr)
     {
         if (errorlog) *errorlog = "";
         if (HasShaderProgram() || !HasVertexShader() || !HasFragmentShader()) return false;
@@ -940,22 +936,22 @@ class Camera : public GameObject
   public:
     const GameObjectType type = CAMERA;
 
-    Camera(float _fov, float _neardist, float _fardist)
+    Camera(float _fov, float _neardist, float _fardist) : GameObject()
     {
         fov = _fov;
         neardist = _neardist;
         fardist = _fardist;
     }
 
-    Camera(float _neardist, float _fardist)
+    Camera(float _neardist, float _fardist) : GameObject()
     {
         neardist = _neardist;
         fardist = _fardist;
     }
 
-    Camera(float _fov) { fov = _fov; }
+    Camera(float _fov) : GameObject() { fov = _fov; }
 
-    Camera() {}
+    Camera() : GameObject() {}
 
     inline float GetNearDistance() { return neardist; }
     inline float GetFarDistance() { return fardist; }
@@ -1152,10 +1148,6 @@ class AudioSource : public GameObject
   private:
     ALuint source;
 
-    void callback(Transform *t)
-    {
-    }
-
     void constructor()
     {
         alGenSources(1, &source);
@@ -1168,7 +1160,7 @@ class AudioSource : public GameObject
   public:
     const GameObjectType type = AUDIOSOURCE;
 
-    AudioSource(glm::vec3 pos) : GameObject(pos) { constructor(); }
+    AudioSource(Transform t) : GameObject(t) { constructor(); }
     AudioSource() : GameObject() { constructor(); }
 
     ~AudioSource() { alDeleteSources(1, &source); }
