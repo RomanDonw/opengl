@@ -32,9 +32,9 @@ class ShaderProgram
     inline bool IsVertexShaderCompiled() { return vertexShaderCompiled; }
     inline bool IsFragmentShaderCompiled() { return fragmentShaderCompiled; }
 
-    inline GLuint GetShaderProgram() { return shaderProgram; }
+    /*inline GLuint GetShaderProgram() { return shaderProgram; }
     inline GLuint GetVertexShader() { return vertexShader; }
-    inline GLuint GetFragmentShader() { return fragmentShader; }
+    inline GLuint GetFragmentShader() { return fragmentShader; }*/
 
     bool DeleteShaderProgram()
     {
@@ -86,7 +86,6 @@ class ShaderProgram
         return true;
     }
 
-    // `errorlog` can be NULL (nullptr).
     bool CompileVertexShader(std::string *errorlog = nullptr)
     {
         if (errorlog) *errorlog = "";
@@ -183,6 +182,88 @@ class ShaderProgram
 
         return true;
     }
+
+    bool UseThisProgram()
+    {
+        if (!HasShaderProgram()) return false;
+
+        glUseProgram(shaderProgram);
+
+        return true;
+    }
+
+    bool HasUniform(std::string name)
+    {
+        if (!HasShaderProgram()) return false;
+
+        return glGetUniformLocation(shaderProgram, name.c_str()) != -1;
+    }
+
+    bool SetUniformInteger(std::string name, int value)
+    {
+        if (!HasUniform(name)) return false;
+
+        glUniform1i(glGetUniformLocation(shaderProgram, name.c_str()), value);
+
+        return true;
+    }
+
+    bool SetUniformFloat(std::string name, float value)
+    {
+        if (!HasUniform(name)) return false;
+
+        glUniform1f(glGetUniformLocation(shaderProgram, name.c_str()), value);
+
+        return true;
+    }
+
+    bool SetUniformVector3(std::string name, glm::vec3 value)
+    {
+        if (!HasUniform(name)) return false;
+
+        glUniform3fv(glGetUniformLocation(shaderProgram, name.c_str()), 1, glm::value_ptr(value));
+
+        return true;
+    }
+
+    bool SetUniformVector4(std::string name, glm::vec4 value)
+    {
+        if (!HasUniform(name)) return false;
+
+        glUniform4fv(glGetUniformLocation(shaderProgram, name.c_str()), 1, glm::value_ptr(value));
+
+        return true;
+    }
+
+    bool SetUniformMatrix4x4(std::string name, glm::mat4 value)
+    {
+        if (!HasUniform(name)) return false;
+
+        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, name.c_str()), 1, GL_FALSE, glm::value_ptr(value));
+
+        return true;
+    }
+
+    /*
+    glUseProgram(sp->GetShaderProgram());
+
+        glUniformMatrix4fv(glGetUniformLocation(sp->GetShaderProgram(), "projection"), 1, GL_FALSE, glm::value_ptr(*projection));
+        glUniformMatrix4fv(glGetUniformLocation(sp->GetShaderProgram(), "view"), 1, GL_FALSE, glm::value_ptr(*view));
+
+        glUniform1i(glGetUniformLocation(sp->GetShaderProgram(), "texture"), 0);
+        glActiveTexture(GL_TEXTURE0);
+
+        glUniform3fv(glGetUniformLocation(sp->GetShaderProgram(), "cameraPosition"), 1, glm::value_ptr(cameraTransform->GetPosition()));
+        glUniform3fv(glGetUniformLocation(sp->GetShaderProgram(), "cameraRotation"), 1, glm::value_ptr(cameraTransform->GetRotation()));
+
+        glUniform3fv(glGetUniformLocation(sp->GetShaderProgram(), "cameraFront"), 1, glm::value_ptr(cameraTransform->GetFront()));
+        glUniform3fv(glGetUniformLocation(sp->GetShaderProgram(), "cameraUp"), 1, glm::value_ptr(cameraTransform->GetUp()));
+        glUniform3fv(glGetUniformLocation(sp->GetShaderProgram(), "cameraRight"), 1, glm::value_ptr(cameraTransform->GetRight()));
+
+        glUniform1i(glGetUniformLocation(sp->GetShaderProgram(), "fogEnabled"), fogRenderSettings->fogEnabled ? GL_TRUE : GL_FALSE);
+        glUniform1f(glGetUniformLocation(sp->GetShaderProgram(), "fogStartDistance"), fogRenderSettings->fogStartDistance);
+        glUniform1f(glGetUniformLocation(sp->GetShaderProgram(), "fogEndDistance"), fogRenderSettings->fogEndDistance);
+        glUniform3fv(glGetUniformLocation(sp->GetShaderProgram(), "fogColor"), 1, glm::value_ptr(fogRenderSettings->fogColor));*/
 };
 
 class Transform
@@ -548,7 +629,15 @@ class Texture
     inline Texture Copy() { return *this; }
 
     inline bool HasTexture() { return hasTexture; } /*{ return glIsTexture(texture) == GL_TRUE; }*/
-    inline GLuint GetTexture() { return texture; }
+    //inline GLuint GetTexture() { return texture; }
+    bool BindTexture()
+    {
+        if (!HasTexture()) return false;
+
+        glBindTexture(GL_TEXTURE_2D, texture);
+
+        return true;
+    }
 
     bool DeleteTexture()
     {
@@ -862,15 +951,21 @@ class Entity : public GameObject
     {
         if (!enableRender) return;
 
-        glUseProgram(sp->GetShaderProgram());
+        //glUseProgram(sp->GetShaderProgram());
+        sp->UseThisProgram();
 
-        glUniformMatrix4fv(glGetUniformLocation(sp->GetShaderProgram(), "projection"), 1, GL_FALSE, glm::value_ptr(*projection));
+        /*glUniformMatrix4fv(glGetUniformLocation(sp->GetShaderProgram(), "projection"), 1, GL_FALSE, glm::value_ptr(*projection));
         glUniformMatrix4fv(glGetUniformLocation(sp->GetShaderProgram(), "view"), 1, GL_FALSE, glm::value_ptr(*view));
 
-        glUniform1i(glGetUniformLocation(sp->GetShaderProgram(), "texture"), 0);
+        glUniform1i(glGetUniformLocation(sp->GetShaderProgram(), "texture"), 0);*/
+
+        sp->SetUniformMatrix4x4("projection", *projection);
+        sp->SetUniformMatrix4x4("view", *view);
+
+        sp->SetUniformInteger("texture", 0);
         glActiveTexture(GL_TEXTURE0);
 
-        glUniform3fv(glGetUniformLocation(sp->GetShaderProgram(), "cameraPosition"), 1, glm::value_ptr(cameraTransform->GetPosition()));
+        /*glUniform3fv(glGetUniformLocation(sp->GetShaderProgram(), "cameraPosition"), 1, glm::value_ptr(cameraTransform->GetPosition()));
         glUniform3fv(glGetUniformLocation(sp->GetShaderProgram(), "cameraRotation"), 1, glm::value_ptr(cameraTransform->GetRotation()));
 
         glUniform3fv(glGetUniformLocation(sp->GetShaderProgram(), "cameraFront"), 1, glm::value_ptr(cameraTransform->GetFront()));
@@ -880,7 +975,19 @@ class Entity : public GameObject
         glUniform1i(glGetUniformLocation(sp->GetShaderProgram(), "fogEnabled"), fogRenderSettings->fogEnabled ? GL_TRUE : GL_FALSE);
         glUniform1f(glGetUniformLocation(sp->GetShaderProgram(), "fogStartDistance"), fogRenderSettings->fogStartDistance);
         glUniform1f(glGetUniformLocation(sp->GetShaderProgram(), "fogEndDistance"), fogRenderSettings->fogEndDistance);
-        glUniform3fv(glGetUniformLocation(sp->GetShaderProgram(), "fogColor"), 1, glm::value_ptr(fogRenderSettings->fogColor));
+        glUniform3fv(glGetUniformLocation(sp->GetShaderProgram(), "fogColor"), 1, glm::value_ptr(fogRenderSettings->fogColor));*/
+
+        sp->SetUniformVector3("cameraPosition", cameraTransform->GetPosition());
+        sp->SetUniformVector3("cameraRotation", cameraTransform->GetRotation());
+
+        sp->SetUniformVector3("cameraFront", cameraTransform->GetFront());
+        sp->SetUniformVector3("cameraUp", cameraTransform->GetUp());
+        sp->SetUniformVector3("cameraRight", cameraTransform->GetRight());
+
+        sp->SetUniformInteger("fogEnabled", fogRenderSettings->fogEnabled ? GL_TRUE : GL_FALSE);
+        sp->SetUniformFloat("fogStartDistance", fogRenderSettings->fogStartDistance);
+        sp->SetUniformFloat("fogEndDistance", fogRenderSettings->fogEndDistance);
+        sp->SetUniformVector3("fogColor", fogRenderSettings->fogColor);
 
         for (Surface surface : surfaces)
         {
@@ -910,15 +1017,19 @@ class Entity : public GameObject
 
             if (texture && texture->HasTexture())
             {
-                glUniform1i(glGetUniformLocation(sp->GetShaderProgram(), "hasTexture"), GL_TRUE);
-                glBindTexture(GL_TEXTURE_2D, texture->GetTexture());
+                //glUniform1i(glGetUniformLocation(sp->GetShaderProgram(), "hasTexture"), GL_TRUE);
+                sp->SetUniformInteger("hasTexture", GL_TRUE);
+                //glBindTexture(GL_TEXTURE_2D, texture->GetTexture());
+                texture->BindTexture();
             }
-            else glUniform1i(glGetUniformLocation(sp->GetShaderProgram(), "hasTexture"), GL_FALSE);
+            else sp->SetUniformInteger("hasTexture", GL_FALSE);//glUniform1i(glGetUniformLocation(sp->GetShaderProgram(), "hasTexture"), GL_FALSE);
 
             glm::mat4 modelmat = GetParentGlobalTransformationMatrix() * transform.GetTransformationMatrix() * surface.transform.GetTransformationMatrix();
-            glUniformMatrix4fv(glGetUniformLocation(sp->GetShaderProgram(), "model"), 1, GL_FALSE, glm::value_ptr(modelmat));
+            //glUniformMatrix4fv(glGetUniformLocation(sp->GetShaderProgram(), "model"), 1, GL_FALSE, glm::value_ptr(modelmat));
+            sp->SetUniformMatrix4x4("model", modelmat);
 
-            glUniform4fv(glGetUniformLocation(sp->GetShaderProgram(), "color"), 1, glm::value_ptr(color * surface.color));
+            //glUniform4fv(glGetUniformLocation(sp->GetShaderProgram(), "color"), 1, glm::value_ptr(color * surface.color));
+            sp->SetUniformVector4("color", color * surface.color);
 
             glBindVertexArray(mesh->GetVAO());
             glDrawElements(GL_TRIANGLES, mesh->GetIndicesCount(), GL_UNSIGNED_INT, nullptr);
