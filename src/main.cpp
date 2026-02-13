@@ -11,15 +11,9 @@
 #include <functional>
 #include <cstdlib>
 
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
+#include "opengl.hpp"
 
-#define GLM_ENABLE_EXPERIMENTAL
-
-#include <glm/glm.hpp>
-#include <glm/gtc/type_ptr.hpp>
-#include <glm/gtc/quaternion.hpp>
-#include <glm/gtx/quaternion.hpp>
+#include "glm.hpp"
 
 #include <AL/al.h>
 #include <AL/alc.h>
@@ -365,7 +359,7 @@ int main()
     fogs.fogEndDistance = 5;
 
     AudioClip testclip = AudioClip();
-    if (testclip.LoadUCSOUNDFromFile("test.ucsound")) std::cout << "Successfully loaded sound from \"/test.ucsound\" file!" << std::endl;
+    if (testclip.LoadUCSOUNDFromFile("arrhythmia_slowed.ucsound")) std::cout << "Successfully loaded sound from \"/test.ucsound\" file!" << std::endl;
 
     AudioSource source = AudioSource();
     source.SetLooping(true);

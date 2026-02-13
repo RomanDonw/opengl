@@ -1,6 +1,8 @@
 #include "utils.hpp"
 
-class ShaderProgram
+#include "objects/ShaderProgram.hpp"
+
+/*class ShaderProgram
 {
   private:
     GLuint shaderProgram;
@@ -239,7 +241,7 @@ class ShaderProgram
 
         return true;
     }
-};
+};*/
 
 class Transform
 {
