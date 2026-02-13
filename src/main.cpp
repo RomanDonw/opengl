@@ -364,6 +364,16 @@ int main()
     fogs.fogStartDistance = 0;
     fogs.fogEndDistance = 5;
 
+    AudioClip testclip = AudioClip();
+    if (testclip.LoadUCSOUNDFromFile("test.ucsound")) std::cout << "Successfully loaded sound from \"/test.ucsound\" file!" << std::endl;
+
+    AudioSource source = AudioSource();
+    source.SetLooping(true);
+    source.PlayClip(&testclip);
+    //source.SetMaxDistance(2);
+    source.SetMinGain(0);
+    source.SetMaxGain(1);
+
     bool lmb_pressed = false;
     float lastX = windowWidth / 2, lastY = windowHeight / 2;
     glfwSetCursorPos(window, lastX, lastY);
@@ -443,6 +453,9 @@ int main()
 
             e_cube_surfrottest.surfaces[0].transform.Rotate(glm::vec3(glm::radians(360.0f) * delta, 0, 0));
             e_cube_surfrottest.transform.Rotate(glm::vec3(0, glm::radians(90.0f) * delta, 0));
+            //e_cube_surfrottest.transform.Translate({0, 0, -1 * delta});
+
+            source.transform.SetPosition(e_cube_surfrottest.transform.GetPosition());
 
             //e4.SetRotation(e4.GetRotation() + glm::vec3(0, glm::radians(90.0f) * delta, glm::radians(30.0f) * delta));
 

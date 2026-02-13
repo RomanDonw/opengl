@@ -1047,7 +1047,7 @@ class AudioClip
     ~AudioClip() { DeleteBuffer(); }
 
     inline bool HasBuffer() { return hasBuffer; }
-    inline ALuint GetBuffer() { return buffer; }
+    //inline ALuint GetBuffer() { return buffer; }
     bool DeleteBuffer()
     {
         if (!HasBuffer()) return false;
@@ -1055,6 +1055,16 @@ class AudioClip
         hasBuffer = false;
         return true;
     }
+
+    bool SetSourceBuffer(ALuint source)
+    {
+        if (!HasBuffer()) return false;
+
+        alSourcei(source, AL_BUFFER, buffer);
+
+        return true;
+    }
+
     bool LoadUCSOUNDFromFile(std::string filename)
     {
         if (!std::filesystem::is_regular_file(filename)) return false;
@@ -1120,6 +1130,34 @@ class AudioClip
     }
 };
 
+class AudioSourceTransform : public Transform
+{
+  private:
+    //AudioSource *source;
+
+  public:
+
+    AudioSourceTransform(/*AudioSource *src, */glm::vec3 pos, glm::vec3 rot, glm::vec3 scl) : Transform(pos, rot, scl)
+    {
+        //source = src;
+    }
+
+    AudioSourceTransform(/*AudioSource *src, */glm::vec3 pos, glm::vec3 rot) : Transform(pos, rot)
+    {
+        //source = src;
+    }
+
+    AudioSourceTransform(/*AudioSource *src, */glm::vec3 pos) : Transform(pos)
+    {
+        //source = src;
+    }
+
+    AudioSourceTransform(/*AudioSource *src*/) : Transform()
+    {
+        //source = src;
+    }
+};
+
 class AudioSource : public GameObject
 {
   private:
@@ -1129,9 +1167,10 @@ class AudioSource : public GameObject
     void constructor()
     {
         alGenSources(1, &source);
+
         transform.onTransformChangeCallbacks.push_back([this](Transform *t)
         {
-           alSourcefv(source, AL_POSITION, glm::value_ptr(t->GetPosition())); 
+           alSourcefv(source, AL_POSITION, glm::value_ptr(t->GetPosition()));
         });
 
         SetLooping(false);
@@ -1139,6 +1178,8 @@ class AudioSource : public GameObject
 
   public:
     const GameObjectType type = AUDIOSOURCE;
+
+    AudioSourceTransform transform = AudioSourceTransform();
 
     AudioSource(Transform t) : GameObject(t) { constructor(); }
     AudioSource() : GameObject() { constructor(); }
@@ -1194,7 +1235,7 @@ class AudioSource : public GameObject
 
     void PlayClip(AudioClip *clip)
     {
-        alSourcei(source, AL_BUFFER, clip->GetBuffer());
+        clip->SetSourceBuffer(source);
         alSourcePlay(source);
     }
 };
