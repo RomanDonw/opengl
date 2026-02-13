@@ -22,6 +22,7 @@
 #include <glm/gtx/quaternion.hpp>
 
 #include <AL/al.h>
+#include <AL/alc.h>
 
 //#include <json-c/json.h>
 
@@ -119,6 +120,12 @@ void resizeCallback(GLFWwindow *w, int width, int height)
     glViewport(0, 0, windowWidth, windowHeight);
 }
 
+struct
+{
+    glm::vec3 front;
+    glm::vec3 up;
+} typedef ListenerOrientation;
+
 int main()
 {
     GLFWwindow *window;
@@ -137,7 +144,7 @@ int main()
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    /*ALCdevice *aldev = alcOpenDevice(NULL);
+    ALCdevice *aldev = alcOpenDevice(NULL);
     if (!aldev)
     {
         std::cout << "Failed to open OpenAL device." << std::endl;
@@ -155,7 +162,7 @@ int main()
         glfwTerminate();
         return 1;
     }
-    alcMakeContextCurrent(alctx);*/
+    alcMakeContextCurrent(alctx);
     
     //ShaderProgram sp(vertexShaderSource, fragmentShaderSource);
     ShaderProgram sp;
@@ -492,6 +499,12 @@ int main()
                 
             }*/
 
+            alListenerfv(AL_POSITION, glm::value_ptr(cam.transform.GetPosition()));
+            
+            ListenerOrientation orient;
+            orient.front = cam.transform.GetFront();
+            orient.up = cam.transform.GetUp();
+            alListenerfv(AL_ORIENTATION, (ALfloat *)&orient);
 
             glm::mat4 view = cam.GetViewMatrix();
             glm::mat4 proj = cam.GetProjectionMatrix(windowWidth, windowHeight);

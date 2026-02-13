@@ -1124,6 +1124,7 @@ class AudioSource : public GameObject
 {
   private:
     ALuint source;
+    bool looped = false;
 
     void constructor()
     {
@@ -1132,6 +1133,8 @@ class AudioSource : public GameObject
         {
            alSourcefv(source, AL_POSITION, glm::value_ptr(t->GetPosition())); 
         });
+
+        SetLooping(false);
     }
 
   public:
@@ -1181,4 +1184,17 @@ class AudioSource : public GameObject
         return ret;
     }
     inline void SetMaxDistance(float value) { alSourcef(source, AL_MAX_DISTANCE, value); }
+
+    inline bool IsLooped() { return looped; }
+    void SetLooping(bool loop)
+    {
+        looped = loop;
+        alSourcei(source, AL_LOOPING, loop ? AL_TRUE : AL_FALSE);
+    }
+
+    void PlayClip(AudioClip *clip)
+    {
+        alSourcei(source, AL_BUFFER, clip->GetBuffer());
+        alSourcePlay(source);
+    }
 };
