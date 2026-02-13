@@ -32,10 +32,6 @@ class ShaderProgram
     inline bool IsVertexShaderCompiled() { return vertexShaderCompiled; }
     inline bool IsFragmentShaderCompiled() { return fragmentShaderCompiled; }
 
-    /*inline GLuint GetShaderProgram() { return shaderProgram; }
-    inline GLuint GetVertexShader() { return vertexShader; }
-    inline GLuint GetFragmentShader() { return fragmentShader; }*/
-
     bool DeleteShaderProgram()
     {
         if (!HasShaderProgram()) return false;
@@ -243,27 +239,6 @@ class ShaderProgram
 
         return true;
     }
-
-    /*
-    glUseProgram(sp->GetShaderProgram());
-
-        glUniformMatrix4fv(glGetUniformLocation(sp->GetShaderProgram(), "projection"), 1, GL_FALSE, glm::value_ptr(*projection));
-        glUniformMatrix4fv(glGetUniformLocation(sp->GetShaderProgram(), "view"), 1, GL_FALSE, glm::value_ptr(*view));
-
-        glUniform1i(glGetUniformLocation(sp->GetShaderProgram(), "texture"), 0);
-        glActiveTexture(GL_TEXTURE0);
-
-        glUniform3fv(glGetUniformLocation(sp->GetShaderProgram(), "cameraPosition"), 1, glm::value_ptr(cameraTransform->GetPosition()));
-        glUniform3fv(glGetUniformLocation(sp->GetShaderProgram(), "cameraRotation"), 1, glm::value_ptr(cameraTransform->GetRotation()));
-
-        glUniform3fv(glGetUniformLocation(sp->GetShaderProgram(), "cameraFront"), 1, glm::value_ptr(cameraTransform->GetFront()));
-        glUniform3fv(glGetUniformLocation(sp->GetShaderProgram(), "cameraUp"), 1, glm::value_ptr(cameraTransform->GetUp()));
-        glUniform3fv(glGetUniformLocation(sp->GetShaderProgram(), "cameraRight"), 1, glm::value_ptr(cameraTransform->GetRight()));
-
-        glUniform1i(glGetUniformLocation(sp->GetShaderProgram(), "fogEnabled"), fogRenderSettings->fogEnabled ? GL_TRUE : GL_FALSE);
-        glUniform1f(glGetUniformLocation(sp->GetShaderProgram(), "fogStartDistance"), fogRenderSettings->fogStartDistance);
-        glUniform1f(glGetUniformLocation(sp->GetShaderProgram(), "fogEndDistance"), fogRenderSettings->fogEndDistance);
-        glUniform3fv(glGetUniformLocation(sp->GetShaderProgram(), "fogColor"), 1, glm::value_ptr(fogRenderSettings->fogColor));*/
 };
 
 class Transform
@@ -285,7 +260,6 @@ class Transform
     void callback_onchange() { for (std::function<void (Transform *)> callback : onTransformChangeCallbacks) callback(this); }
 
   public:
-    //std::vector<void (*)(Transform *)> onTransformChangeCallbacks = std::vector<void (*)(Transform *)>();
     std::vector<std::function<void (Transform *)>> onTransformChangeCallbacks = std::vector<std::function<void (Transform *)>>();
 
     Transform(glm::vec3 pos, glm::vec3 rot, glm::vec3 scl)
@@ -474,7 +448,7 @@ class Mesh
     inline void UnlockBuffers() { lockbuffers = false; }
 
     inline bool HasBuffers() { return hasbuffers; }
-    inline GLuint GetVAO() { return VAO; }
+    //inline GLuint GetVAO() { return VAO; }
 
     bool GenerateBuffers()
     {
@@ -614,6 +588,16 @@ class Mesh
             fclose(f);
         return false;
     }
+
+    bool RenderMesh()
+    {
+        if (!HasBuffers()) return false;
+
+        glBindVertexArray(VAO);
+        glDrawElements(GL_TRIANGLES, GetIndicesCount(), GL_UNSIGNED_INT, nullptr);
+
+        return true;
+    }
 };
 
 class Texture
@@ -628,8 +612,7 @@ class Texture
 
     inline Texture Copy() { return *this; }
 
-    inline bool HasTexture() { return hasTexture; } /*{ return glIsTexture(texture) == GL_TRUE; }*/
-    //inline GLuint GetTexture() { return texture; }
+    inline bool HasTexture() { return hasTexture; }
     bool BindTexture()
     {
         if (!HasTexture()) return false;
@@ -951,31 +934,13 @@ class Entity : public GameObject
     {
         if (!enableRender) return;
 
-        //glUseProgram(sp->GetShaderProgram());
         sp->UseThisProgram();
-
-        /*glUniformMatrix4fv(glGetUniformLocation(sp->GetShaderProgram(), "projection"), 1, GL_FALSE, glm::value_ptr(*projection));
-        glUniformMatrix4fv(glGetUniformLocation(sp->GetShaderProgram(), "view"), 1, GL_FALSE, glm::value_ptr(*view));
-
-        glUniform1i(glGetUniformLocation(sp->GetShaderProgram(), "texture"), 0);*/
 
         sp->SetUniformMatrix4x4("projection", *projection);
         sp->SetUniformMatrix4x4("view", *view);
 
         sp->SetUniformInteger("texture", 0);
         glActiveTexture(GL_TEXTURE0);
-
-        /*glUniform3fv(glGetUniformLocation(sp->GetShaderProgram(), "cameraPosition"), 1, glm::value_ptr(cameraTransform->GetPosition()));
-        glUniform3fv(glGetUniformLocation(sp->GetShaderProgram(), "cameraRotation"), 1, glm::value_ptr(cameraTransform->GetRotation()));
-
-        glUniform3fv(glGetUniformLocation(sp->GetShaderProgram(), "cameraFront"), 1, glm::value_ptr(cameraTransform->GetFront()));
-        glUniform3fv(glGetUniformLocation(sp->GetShaderProgram(), "cameraUp"), 1, glm::value_ptr(cameraTransform->GetUp()));
-        glUniform3fv(glGetUniformLocation(sp->GetShaderProgram(), "cameraRight"), 1, glm::value_ptr(cameraTransform->GetRight()));
-
-        glUniform1i(glGetUniformLocation(sp->GetShaderProgram(), "fogEnabled"), fogRenderSettings->fogEnabled ? GL_TRUE : GL_FALSE);
-        glUniform1f(glGetUniformLocation(sp->GetShaderProgram(), "fogStartDistance"), fogRenderSettings->fogStartDistance);
-        glUniform1f(glGetUniformLocation(sp->GetShaderProgram(), "fogEndDistance"), fogRenderSettings->fogEndDistance);
-        glUniform3fv(glGetUniformLocation(sp->GetShaderProgram(), "fogColor"), 1, glm::value_ptr(fogRenderSettings->fogColor));*/
 
         sp->SetUniformVector3("cameraPosition", cameraTransform->GetPosition());
         sp->SetUniformVector3("cameraRotation", cameraTransform->GetRotation());
@@ -1017,22 +982,15 @@ class Entity : public GameObject
 
             if (texture && texture->HasTexture())
             {
-                //glUniform1i(glGetUniformLocation(sp->GetShaderProgram(), "hasTexture"), GL_TRUE);
                 sp->SetUniformInteger("hasTexture", GL_TRUE);
-                //glBindTexture(GL_TEXTURE_2D, texture->GetTexture());
                 texture->BindTexture();
             }
-            else sp->SetUniformInteger("hasTexture", GL_FALSE);//glUniform1i(glGetUniformLocation(sp->GetShaderProgram(), "hasTexture"), GL_FALSE);
+            else sp->SetUniformInteger("hasTexture", GL_FALSE);
 
-            glm::mat4 modelmat = GetParentGlobalTransformationMatrix() * transform.GetTransformationMatrix() * surface.transform.GetTransformationMatrix();
-            //glUniformMatrix4fv(glGetUniformLocation(sp->GetShaderProgram(), "model"), 1, GL_FALSE, glm::value_ptr(modelmat));
-            sp->SetUniformMatrix4x4("model", modelmat);
-
-            //glUniform4fv(glGetUniformLocation(sp->GetShaderProgram(), "color"), 1, glm::value_ptr(color * surface.color));
+            sp->SetUniformMatrix4x4("model", GetParentGlobalTransformationMatrix() * transform.GetTransformationMatrix() * surface.transform.GetTransformationMatrix());
             sp->SetUniformVector4("color", color * surface.color);
 
-            glBindVertexArray(mesh->GetVAO());
-            glDrawElements(GL_TRIANGLES, mesh->GetIndicesCount(), GL_UNSIGNED_INT, nullptr);
+            mesh->RenderMesh();
         }
     }
 };
@@ -1077,98 +1035,6 @@ class Camera : public GameObject
     inline glm::mat4 GetProjectionMatrix(unsigned int screen_width, unsigned int screen_height)
     { return glm::perspective(fov, (float)screen_width / (float)screen_height, neardist, fardist); }
 };
-
-/*
-enum
-{
-    NODATA = 0,
-
-    UNSIGNED_PCM_8_MONO = 1,
-    UNSIGNED_PCM_8_STEREO = 2,
-
-    SIGNED_PCM_16_MONO = 3,
-    SIGNED_PCM_16_STEREO = 4
-} typedef AudioClipType;
-
-class AudioClip
-{
-  private:
-    void *data = nullptr;
-    size_t size = 0;
-
-    AudioClipType type = NODATA;
-    uint16_t frequency = 0;
-    size_t length = 0; // in (both channel) samples.
-
-  public:
-    AudioClip() {}
-    ~AudioClip()
-    {
-        if (HasBuffer()) free(data);
-    }
-
-    inline bool HasBuffer() { return data; }
-    inline AudioClipType GetType() { return type; }
-
-    static uint8_t GetTypeSampleSizeInBytes(AudioClipType t)
-    {
-        switch (t)
-        {
-            case UNSIGNED_PCM_8_MONO:
-                return sizeof(uint8_t);
-
-            case UNSIGNED_PCM_8_STEREO:
-                return 2 * sizeof(uint8_t);
-
-            case SIGNED_PCM_16_MONO:
-                return sizeof(int16_t);
-
-            case SIGNED_PCM_16_STEREO:
-                return 2 * sizeof(int16_t);
-        }
-
-        return 0;
-    }
-
-    inline size_t GetBufferSizeInBytes() { return GetTypeSampleSizeInBytes(type) * length * frequency; }
-
-    bool CreateBuffer(size_t len, AudioClipType t, uint16_t freq)
-    {
-        if (HasBuffer() || t == NODATA || len == 0 || freq == 0) return false;
-
-        void *new_data = malloc(len * GetTypeSampleSizeInBytes(t) * freq);
-        if (!new_data) return false;
-        data = new_data;
-
-        type = t;
-        length = len;
-        frequency = freq;
-
-        return true;
-    }
-
-    bool DeleteBuffer()
-    {
-        if (!data) return false;
-
-        free(data);
-
-        type = NODATA;
-        length = 0;
-        frequency = 0;
-
-        return true;
-    }
-
-    bool SetBufferData(size_t srcbuffsize, void *srcbuff)
-    {
-        if (!HasBuffer()) return false;
-
-        memcpy(data, srcbuff, min(srcbuffsize, GetBufferSizeInBytes()));
-
-        return true;
-    }
-};*/
 
 class AudioClip
 {
