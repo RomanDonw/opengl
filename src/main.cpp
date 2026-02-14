@@ -12,11 +12,8 @@
 #include <cstdlib>
 
 #include "opengl.hpp"
-
 #include "glm.hpp"
-
-#include <AL/al.h>
-#include <AL/alc.h>
+#include "openal.hpp"
 
 //#include <json-c/json.h>
 

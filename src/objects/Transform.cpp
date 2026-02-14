@@ -1,5 +1,15 @@
 #include "Transform.hpp"
 
+// === PRIVATE ===
+
+void Transform::updatecache() { if (!lock_cache) UpdateCache(); }
+
+//void Transform::callback_onchange() { for (std::function<void (Transform *)> callback : onTransformChangeCallbacks) callback(this); }
+
+void Transform::OnTransformUpdated() { /*callback_onchange();*/ };
+
+// === PUBLIC ===
+
 Transform::Transform(glm::vec3 pos, glm::vec3 rot, glm::vec3 scl)
 {
     position = pos;
@@ -34,6 +44,8 @@ void Transform::UpdateCache()
     front = rot_quat * glm::vec3(0.0f, 0.0f, -1.0f);
     up = rot_quat * glm::vec3(0.0f, 1.0f, 0.0f);
     right = rot_quat * glm::vec3(1.0f, 0.0f, 0.0f);
+
+    OnTransformUpdated();
 }
 
 bool Transform::IsCacheLocked() { return lock_cache; }
@@ -55,13 +67,10 @@ glm::vec3 Transform::GetRight() { return right; }
 
 glm::mat4 Transform::GetTransformationMatrix() { return glm::scale(glm::translate(glm::mat4(1), position) * rot_mat, scale); }
 
-void Transform::SetPosition(glm::vec3 v) { position = v; callback_onchange(); }
+void Transform::SetPosition(glm::vec3 v) { position = v; OnTransformUpdated(); }
 void Transform::SetRotation(glm::vec3 v) { rotation = v; updatecache(); }
-void Transform::SetScale(glm::vec3 v) { scale = v; callback_onchange(); }
+void Transform::SetScale(glm::vec3 v) { scale = v; OnTransformUpdated();}
 
-void Transform::Translate(glm::vec3 v) { position += v; callback_onchange(); }
+void Transform::Translate(glm::vec3 v) { position += v; OnTransformUpdated(); }
 void Transform::Rotate(glm::vec3 v) { rotation += v; updatecache(); }
-void Transform::Scale(glm::vec3 v) { scale += v; callback_onchange(); }
-
-
-void Transform::callback_onchange() { for (std::function<void (Transform *)> callback : onTransformChangeCallbacks) callback(this); }
+void Transform::Scale(glm::vec3 v) { scale += v; OnTransformUpdated(); }

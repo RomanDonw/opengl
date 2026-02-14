@@ -14,7 +14,7 @@ class Transform
     glm::vec3 scale = glm::vec3(1.0f);
 
     bool lock_cache = false;
-    inline void updatecache() { if (!lock_cache) UpdateCache(); }
+    void updatecache();
 
     // cache:
     glm::quat rot_quat;
@@ -22,10 +22,12 @@ class Transform
 
     glm::vec3 front, up, right;
 
-    void callback_onchange();
+    //void callback_onchange();
+
+    void OnTransformUpdated();
 
   public:
-    std::vector<std::function<void (Transform *)>> onTransformChangeCallbacks = std::vector<std::function<void (Transform *)>>();
+    //std::vector<std::function<void (Transform *)>> onTransformChangeCallbacks = std::vector<std::function<void (Transform *)>>();
 
     Transform(glm::vec3 pos, glm::vec3 rot, glm::vec3 scl);
     Transform(glm::vec3 pos, glm::vec3 rot);
