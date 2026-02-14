@@ -3,6 +3,9 @@
 
 #include <vector>
 
+#include "../glm.hpp"
+#include "Transform.hpp"
+
 enum
 {
     UNKNOWN = 0,

@@ -1,15 +1,17 @@
 #include "AudioSourceTransform.hpp"
 
+#include "../glm.hpp"
+
 #include "AudioSource.hpp"
 
 // === PRIVATE ===
 
 void AudioSourceTransform::OnTransformUpdated()
 {
-    alSourcefv(source->source, AL_POSITION, GetPosition());
+    alSourcefv(source->source, AL_POSITION, glm::value_ptr(GetPosition()));
 }
 
-AudioSourceTransform::AudioSourceTransform() : Transform() : source(src) {};
+AudioSourceTransform::AudioSourceTransform(AudioSource *src) : Transform(), source(src) {};
 
 // === PUBLIC ===
 

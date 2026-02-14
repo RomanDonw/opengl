@@ -5,22 +5,21 @@
 
 #include "Transform.hpp"
 #include "GameObject.hpp"
-//#include "AudioSourceTransform.hpp"
+#include "AudioSourceTransform.hpp"
 #include "AudioClip.hpp"
-
-class AudioSourceTransform;
 
 class AudioSource : public GameObject
 {
   private:
-    friend class AudioClip;
-
     ALuint source;
     bool looped = false;
 
     void constructor();
 
   public:
+    friend class AudioClip;
+    friend class AudioSourceTransform;
+
     const GameObjectType type = AUDIOSOURCE;
 
     AudioSourceTransform transform;

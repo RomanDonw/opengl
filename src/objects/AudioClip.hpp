@@ -3,6 +3,8 @@
 
 #include "../openal.hpp"
 
+#include "AudioClip.hpp"
+
 #include <string>
 
 class AudioClip
@@ -11,6 +13,8 @@ class AudioClip
     ALuint buffer;
 
   public:
+    friend class AudioSource;
+
     AudioClip();
     ~AudioClip();
 

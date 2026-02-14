@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <cstring>
 #include <filesystem>
+#include <vector>
 
 AudioClip::AudioClip() { alGenBuffers(1, &buffer); }
 AudioClip::~AudioClip() { alDeleteBuffers(1, &buffer); }

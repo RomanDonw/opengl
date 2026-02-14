@@ -2,7 +2,7 @@
 
 #include <algorithm>
 
-GameObject::GameObject(Transform t) transform(t) {}
+GameObject::GameObject(Transform t) : transform(t) {}
 GameObject::GameObject() {}
 
 GameObject::~GameObject() { SetParent(nullptr); }

@@ -5,8 +5,8 @@
 
 #include "glm.hpp"
 
-#define min(x, y) a < b ? a : b
-#define max(x, y) a > b ? a : b
+/*#define min(x, y) x < y ? x : y
+#define max(x, y) x > y ? x : y*/
 
 namespace Utils
 {
