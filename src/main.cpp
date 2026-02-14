@@ -8,7 +8,7 @@
 #include <cstring>
 #include <sstream>
 #include <algorithm>
-//#include <functional>
+#include <functional>
 #include <cstdlib>
 
 #include "opengl.hpp"

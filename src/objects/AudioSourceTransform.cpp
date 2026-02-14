@@ -1,15 +1,11 @@
 #include "AudioSourceTransform.hpp"
 
-#include "AudioSource.hpp"
-
 // === PRIVATE ===
 
-void AudioSourceTransform::OnTransformUpdated()
+void Transform::OnTransformUpdated()
 {
     alSourcefv(source->source, AL_POSITION, GetPosition());
 }
-
-AudioSourceTransform::AudioSourceTransform() : Transform() : source(src) {};
 
 // === PUBLIC ===
 
