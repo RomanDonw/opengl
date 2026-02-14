@@ -9,13 +9,16 @@ echo Building main...
 g++ -c -I%INCLUDE% -L%LIB% %SRC%\main.cpp -o main.o
 
 g++ -c -I%INCLUDE% -L%LIB% %SRC%\objects\ShaderProgram.cpp -o ShaderProgram.o
+g++ -c -I%INCLUDE% -L%LIB% %SRC%\objects\Transform.cpp -o Transform.o
+g++ -c -I%INCLUDE% -L%LIB% %SRC%\Utils.cpp -o Utils.o
 
 if not exist .\main.o goto on_error
     echo Linking main...
-    g++ -I%INCLUDE% -L%LIB% -static-libgcc -static-libstdc++ ./main.o ./ShaderProgram.o %LIB%\libglad.a %LIB%\libglfw3.a -lopengl32 -lgdi32 -lOpenAl32 -lsoft_oal -o ./main.exe
+    g++ -I%INCLUDE% -L%LIB% -static-libgcc -static-libstdc++ ./main.o ./ShaderProgram.o ./Transform.o ./Utils.o %LIB%\libglad.a %LIB%\libglfw3.a -lopengl32 -lgdi32 -lOpenAl32 -lsoft_oal -o ./main.exe
 
     del main.o
     del ShaderProgram.o
+    del Transform.o
 
     : copy %LIB%\glfw3.dll .
     : copy %LIB%\glad.dll .

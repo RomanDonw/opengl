@@ -1,0 +1,58 @@
+{
+    "compiler":
+    {
+        "command": "g++ -c",
+        "options": "",
+        "include-pathes":
+        [
+            "include"
+        ]
+    },
+    "linker":
+    {
+        "command": "g++ -static-libgcc -static-libstdc++",
+        "options": "",
+        "libraries-pathes":
+        [
+            "lib"
+        ],
+        "static-libraries-files-pathes":
+        [
+            "lib/libglfw3.a",
+            "lib/libglad.a"
+        ],
+        "libraries":
+        [
+            "opengl32",
+            "gdi32",
+            "OpenAL32",
+            "soft_oal"
+        ],
+        "output-file-path": "build/main.exe"
+    },
+    "general":
+    {
+        "temporary-folder": ".tmp",
+        "copy-files":
+        [
+            "lib/soft_oal.dll",
+            "lib/OpenAL32.dll"
+        ],
+        "copy-folders":
+        [
+            
+        ],
+        "copy-destination-folder": "build"
+    },
+    "project":
+    {
+        "files":
+        [
+            "src/main.cpp",
+            "src/Utils.cpp",
+
+            "src/objects/ShaderProgram.cpp",
+            "src/objects/Transform.cpp"
+        ]
+    }
+}

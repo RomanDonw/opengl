@@ -23,7 +23,7 @@
 //#include <AL/al.h>
 //#include <AL/alc.h>
 
-#include "utils.hpp"
+//#include "utils.hpp"
 #include "objects.hpp"
 
 const char *vertexShaderSource = R"(
@@ -359,7 +359,7 @@ int main()
     fogs.fogEndDistance = 5;
 
     AudioClip testclip = AudioClip();
-    if (testclip.LoadUCSOUNDFromFile("arrhythmia_slowed.ucsound")) std::cout << "Successfully loaded sound from \"/test.ucsound\" file!" << std::endl;
+    if (testclip.LoadUCSOUNDFromFile("test.ucsound")) std::cout << "Successfully loaded sound from \"/test.ucsound\" file!" << std::endl;
 
     AudioSource source = AudioSource();
     source.SetLooping(true);
@@ -534,7 +534,7 @@ int main()
         glfwPollEvents();
     }
     
-    //alcCloseDevice(aldev);
+    alcCloseDevice(aldev);
     glfwTerminate();
     return 0;
 }
