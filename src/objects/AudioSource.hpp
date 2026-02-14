@@ -11,6 +11,8 @@
 class AudioSource : public GameObject
 {
   private:
+    friend class AudioClip;
+
     ALuint source;
     bool looped = false;
 
@@ -30,6 +32,7 @@ class AudioSource : public GameObject
 
     bool IsLooped();
     void SetLooping(bool loop);
+    
     void PlayClip(AudioClip *clip);
 };
 

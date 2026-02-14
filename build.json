@@ -52,7 +52,11 @@
             "src/utils.cpp",
 
             "src/objects/ShaderProgram.cpp",
-            "src/objects/Transform.cpp"
+            "src/objects/Transform.cpp",
+
+            "src/objects/AudioClip.cpp",
+            "src/objects/AudioSource.cpp",
+            "src/objects/AudioSourceTransform.cpp"
         ]
     }
 }

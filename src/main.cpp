@@ -362,8 +362,8 @@ int main()
     source.SetLooping(true);
     source.PlayClip(&testclip);
     //source.SetMaxDistance(2);
-    source.SetMinGain(0);
-    source.SetMaxGain(1);
+    //source.SetMinGain(0);
+    //source.SetMaxGain(1);
 
     bool lmb_pressed = false;
     float lastX = windowWidth / 2, lastY = windowHeight / 2;

@@ -20,14 +20,6 @@ AudioSource::AudioSource(Transform t) { constructor(); }
 AudioSource::AudioSource() { constructor(); }
 AudioSource::~AudioSource() { alDeleteSources(1, &source); }
 
-/*
-float AudioSource::GetPitch()
-{
-    float ret;
-    alGetSourcef(source, AL_PITCH, &ret);
-    return ret;
-}*/
-
 bool AudioSource::IsLooped() { return looped; }
 void AudioSource::SetLooping(bool loop)
 {
@@ -39,6 +31,7 @@ void SetSourceFloat(ALenum enum, float value) { alSourcef(source, enum, value); 
 
 void AudioSource::PlayClip(AudioClip *clip)
 {
-    clip->SetSourceBuffer(source);
+    alSourcei(source, AL_BUFFER, clip->buffer);
+
     alSourcePlay(source);
 }
