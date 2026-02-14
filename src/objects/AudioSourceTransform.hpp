@@ -2,9 +2,13 @@
 #define AUDIOSOURCETRANSFORM_HPP
 
 #include "../glm.hpp"
+#include "../openal.hpp"
 
-#include "AudioSource.hpp"
+//#include "AudioSource.hpp"
 #include "Transform.hpp"
+//#include "GameObject.hpp"
+
+class AudioSource;
 
 class AudioSourceTransform : public Transform
 {
@@ -14,7 +18,7 @@ class AudioSourceTransform : public Transform
 
     void OnTransformUpdated();
 
-    AudioSourceTransform(AudioSource *src) : Transform() : source(src);
+    AudioSourceTransform(AudioSource *src);
 
   public:
     /*AudioSourceTransform(AudioSource *src, glm::vec3 pos, glm::vec3 rot, glm::vec3 scl) : Transform(pos, rot, scl);

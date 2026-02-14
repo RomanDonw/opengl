@@ -1,5 +1,7 @@
 #include "AudioSource.hpp"
 
+#include "AudioSourceTransform.hpp"
+
 // === PRIVATE ===
 
 void AudioSource::constructor()
@@ -16,8 +18,9 @@ void AudioSource::constructor()
 
 // === PUBLIC ===
 
-AudioSource::AudioSource(Transform t) { constructor(); }
-AudioSource::AudioSource() { constructor(); }
+AudioSource::AudioSource(Transform t) : GameObject(t) : transform(this) { constructor(); }
+AudioSource::AudioSource() : GameObject() : transform(this) { constructor(); }
+
 AudioSource::~AudioSource() { alDeleteSources(1, &source); }
 
 bool AudioSource::IsLooped() { return looped; }
@@ -27,7 +30,7 @@ void AudioSource::SetLooping(bool loop)
     alSourcei(source, AL_LOOPING, loop ? AL_TRUE : AL_FALSE);
 }
 
-void SetSourceFloat(ALenum enum, float value) { alSourcef(source, enum, value); }
+void SetSourceFloat(ALenum option, float value) { alSourcef(source, enum, value); }
 
 void AudioSource::PlayClip(AudioClip *clip)
 {

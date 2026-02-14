@@ -2,42 +2,10 @@
 
 #include "objects/ShaderProgram.hpp"
 #include "objects/Transform.hpp"
-
-enum
-{
-    UNKNOWN = 0,
-    ENTITY = 1,
-    CAMERA = 2,
-    AUDIOSOURCE = 3
-} typedef GameObjectType;
-
-class GameObject
-{
-  private:
-    GameObject *parent = nullptr;
-    std::vector<GameObject *> children = std::vector<GameObject *>();
-
-  public:
-    const GameObjectType type = UNKNOWN;
-    Transform transform = Transform();
-
-    GameObject(Transform t) { transform = t; }
-    GameObject() {}
-
-    ~GameObject() { SetParent(nullptr); }
-
-    inline GameObject Copy() { return *this; }
-
-    void SetParent(GameObject *new_parent)
-    {
-        if (parent) parent->children.erase(std::remove(parent->children.begin(), parent->children.end(), this), parent->children.end());
-        if (new_parent) new_parent->children.push_back(this);
-        parent = new_parent;
-    }
-
-    inline glm::mat4 GetParentGlobalTransformationMatrix()
-    { return parent ? parent->GetParentGlobalTransformationMatrix() * parent->transform.GetTransformationMatrix() : glm::mat4(1.0f); }
-};
+#include "objects/GameObject.hpp"
+#include "objects/AudioClip.hpp"
+#include "objects/AudioSource.hpp"
+#include "objects/AudioSourceTransform.hpp"
 
 struct
 {

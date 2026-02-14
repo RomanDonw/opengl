@@ -5,8 +5,10 @@
 
 #include "Transform.hpp"
 #include "GameObject.hpp"
-#include "AudioSourceTransform.hpp"
+//#include "AudioSourceTransform.hpp"
 #include "AudioClip.hpp"
+
+class AudioSourceTransform;
 
 class AudioSource : public GameObject
 {
@@ -23,16 +25,16 @@ class AudioSource : public GameObject
 
     AudioSourceTransform transform;
 
-    AudioSource(Transform t) : GameObject(t) : transform(this);
-    AudioSource() : GameObject() : transform(this);
+    AudioSource(Transform t);
+    AudioSource();
 
     ~AudioSource();
 
-    void SetSourceFloat(ALenum enum, float value);
+    void SetSourceFloat(ALenum option, float value);
 
     bool IsLooped();
     void SetLooping(bool loop);
-    
+
     void PlayClip(AudioClip *clip);
 };
 
