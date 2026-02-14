@@ -40,7 +40,7 @@
         ],
         "copy-folders":
         [
-            
+
         ],
         "copy-destination-folder": "build"
     },
@@ -49,7 +49,7 @@
         "files":
         [
             "src/main.cpp",
-            "src/Utils.cpp",
+            "src/utils.cpp",
 
             "src/objects/ShaderProgram.cpp",
             "src/objects/Transform.cpp"

@@ -2,7 +2,7 @@ from json import JSONDecoder
 import sys
 import os
 import shutil
-import subprocess
+#import subprocess
 
 if len(sys.argv) >= (1) + 1:
     if os.path.isfile(sys.argv[1]):
@@ -128,16 +128,19 @@ if len(sys.argv) >= (1) + 1:
                 else:
                     print(f"Warning: specified folder to copy \"{fl}\" doesn't exist, coping skipped.")
 
+            exit(0)
+
             print("Running output executable...")
             #os.system(f"\"{output_file_path}\"")
             #print(output_file_path)
 
-            #currdir = os.getcwd()
-            #os.chdir(build_folder)
+            currdir = os.getcwd()
+            os.chdir(build_folder)
             #os.system(os.path.basename(output_file_path))
-            #os.chdir(currdir)
+            os.startfile(os.path.basename(output_file_path))
+            os.chdir(currdir)
 
-            subprocess.Popen([os.path.realpath(output_file_path)], cwd=build_folder)
+            #subprocess.Popen([os.path.realpath(output_file_path)], cwd=build_folder)
 
             print("Done.")
 
