@@ -378,6 +378,14 @@ int main()
     source.SetParent(&e_cube_surfrottest, false);
     //source.transform = Transform();
 
+    AudioClip zapclip = AudioClip();
+    if (zapclip.LoadUCSOUNDFromFile("zapmachine.ucsound")) std::cout << "loaded sound \"/zapmachine.ucsound\"." << std::endl;
+
+    AudioSource zapsrc = AudioSource();
+    zapsrc.SetLooping(true);
+    zapsrc.PlayClip(&zapclip);
+    zapsrc.SetParent(&e, false);
+
     //source.SetMaxDistance(2);
     //source.SetMinGain(0);
     //source.SetMaxGain(1);

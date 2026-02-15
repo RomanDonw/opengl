@@ -17,7 +17,11 @@ void GameObject::OnGlobalTransformChanged() { for (GameObject *obj : children) o
 GameObject::GameObject(Transform t) : transform(this) { transform = t; }
 GameObject::GameObject() : transform(this) {}
 
-GameObject::~GameObject() { SetParent(nullptr, false); }
+GameObject::~GameObject()
+{
+    SetParent(nullptr, false);
+    for (GameObject *obj : children) obj->SetParent(nullptr);
+}
 
 GameObject GameObject::Copy() { return *this; }
 
@@ -32,6 +36,8 @@ size_t GameObject::SetParent(GameObject *new_parent, bool save_global_pos)
         index = new_parent->children.size() - 1;
     }
 
+    OnParentTransformChanged();
+
     if (save_global_pos)
     {
         Transform globt = GetGlobalTransform();
@@ -41,9 +47,6 @@ size_t GameObject::SetParent(GameObject *new_parent, bool save_global_pos)
     parent = new_parent;
     return index;
 }
-
-/*glm::mat4 GameObject::GetParentGlobalTransformationMatrix()
-{ return parent ? parent->GetParentGlobalTransformationMatrix() * parent->transform.GetTransformationMatrix() : glm::mat4(1.0f); }*/
 
 Transform GameObject::GetParentGlobalTransform()
 { return parent ? parent->GetParentGlobalTransform() + (Transform)parent->transform : Transform(); }

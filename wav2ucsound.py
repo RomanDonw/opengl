@@ -62,6 +62,11 @@ if len(sys.argv) >= 2 + 1:
                 f.write(struct.pack("<7sHBH", b"UCSOUND", UCSOUND_VERSION, ftype, sfl.samplerate))
 
                 for sample in sfl.read(dtype="float64"):
+                    try:
+                        len(sample)
+                    except TypeError:
+                        sample = [sample]
+                        
                     for value in sample:
                         # print(int((value + 1) * multiplier))
                         # f.write(struct.pack(format_str, int((value + 1) * multiplier)))
