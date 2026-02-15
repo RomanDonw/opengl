@@ -2,9 +2,11 @@
 #define GAMEOBJECT_HPP
 
 #include <vector>
+//#include <unordered_set>
 
 #include "../glm.hpp"
 #include "Transform.hpp"
+#include "GameObjectTransform.hpp"
 
 enum
 {
@@ -16,24 +18,31 @@ enum
 
 class GameObject
 {
-  private:
-    GameObject *parent = nullptr;
-    std::vector<GameObject *> children = std::vector<GameObject *>();
+    friend class GameObjectTransform;
 
-  public:
-    const GameObjectType type = UNKNOWN;
-    Transform transform = Transform();
+    protected:
+        GameObject *parent = nullptr;
+        std::vector<GameObject *> children = std::vector<GameObject *>();
 
-    //GameObject(Transform t) { transform = t; }
-    GameObject(Transform t);
-    GameObject();
+        virtual void OnLocalTransformChanged();
+        virtual void OnParentTransformChanged();
 
-    ~GameObject();
+        virtual void OnGlobalTransformChanged();
 
-    GameObject Copy();
+    public:
+        const GameObjectType type = UNKNOWN;
+        GameObjectTransform transform;
 
-    void SetParent(GameObject *new_parent);
-    glm::mat4 GetParentGlobalTransformationMatrix();
+        GameObject(Transform t);
+        GameObject();
+
+        virtual ~GameObject();
+
+        GameObject Copy();
+
+        size_t SetParent(GameObject *new_parent, bool save_global_pos = true);
+        Transform GetParentGlobalTransform();
+        Transform GetGlobalTransform();
 };
 
 #endif

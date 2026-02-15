@@ -6,7 +6,7 @@
 
 // === PRIVATE ===
 
-void AudioSourceTransform::OnTransformUpdated()
+void AudioSourceTransform::OnTransformChanged()
 {
     alSourcefv(source->source, AL_POSITION, glm::value_ptr(GetPosition()));
 }

@@ -1,5 +1,7 @@
 #include "AudioSource.hpp"
 
+#include <iostream>
+
 // === PRIVATE ===
 
 void AudioSource::constructor()
@@ -9,10 +11,19 @@ void AudioSource::constructor()
     SetLooping(false);
 }
 
+void AudioSource::OnGlobalTransformChanged()
+{
+    GameObject::OnGlobalTransformChanged();
+
+    Transform globt = GetGlobalTransform();
+    alSourcefv(source, AL_POSITION, glm::value_ptr(globt.GetPosition()));
+    //std::cout << "called OnGlobalTransformChanged()" << std::endl;
+}
+
 // === PUBLIC ===
 
-AudioSource::AudioSource(Transform t) : GameObject(t), transform(this) { constructor(); }
-AudioSource::AudioSource() : GameObject(), transform(this) { constructor(); }
+AudioSource::AudioSource(Transform t) : GameObject(t) { constructor(); }
+AudioSource::AudioSource() : GameObject() { constructor(); }
 
 AudioSource::~AudioSource() { alDeleteSources(1, &source); }
 

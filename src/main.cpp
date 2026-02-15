@@ -11,6 +11,8 @@
 //#include <functional>
 #include <cstdlib>
 
+#include <csignal>
+
 #include "opengl.hpp"
 #include "glm.hpp"
 #include "openal.hpp"
@@ -117,8 +119,20 @@ struct
     glm::vec3 up;
 } typedef ListenerOrientation;
 
+void on_signal(int code)
+{
+    switch (code)
+    {
+        case SIGSEGV:
+            std::cout << "!!! OCCURED SEGMENTATION FAULT !!!" << std::endl;
+            break;
+    }
+}
+
 int main()
 {
+    signal(SIGSEGV, on_signal);
+
     GLFWwindow *window;
     int ret = initOpenGL(&window);
     if (ret != 0) return ret;
@@ -361,6 +375,9 @@ int main()
     AudioSource source = AudioSource();
     source.SetLooping(true);
     source.PlayClip(&testclip);
+    source.SetParent(&e_cube_surfrottest, false);
+    //source.transform = Transform();
+
     //source.SetMaxDistance(2);
     //source.SetMinGain(0);
     //source.SetMaxGain(1);
@@ -444,9 +461,11 @@ int main()
 
             e_cube_surfrottest.surfaces[0].transform.Rotate(glm::vec3(glm::radians(360.0f) * delta, 0, 0));
             e_cube_surfrottest.transform.Rotate(glm::vec3(0, glm::radians(90.0f) * delta, 0));
-            //e_cube_surfrottest.transform.Translate({0, 0, -1 * delta});
+            e_cube_surfrottest.transform.Translate({0, 0, -1 * delta});
 
-            source.transform.SetPosition(e_cube_surfrottest.transform.GetPosition());
+            //source.transform.SetPosition(e_cube_surfrottest.transform.GetPosition());
+
+            //std::cout << source.GetGlobalTransform().ToString() << std::endl;
 
             //e4.SetRotation(e4.GetRotation() + glm::vec3(0, glm::radians(90.0f) * delta, glm::radians(30.0f) * delta));
 
@@ -530,6 +549,8 @@ int main()
         }
         glfwPollEvents();
     }
+
+    std::cout << "successful quit" << std::endl;
     
     alcCloseDevice(aldev);
     glfwTerminate();

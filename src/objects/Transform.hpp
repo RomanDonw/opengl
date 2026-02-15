@@ -1,69 +1,80 @@
 #ifndef TRANSFORM_HPP
 #define TRANSFORM_HPP
 
-//#include <vector>
-
 #include "../utils.hpp"
 #include "../glm.hpp"
 
+#include <string>
+
+class GameObjectTransform;
+
 class Transform
 {
-  private:
-    glm::vec3 position = glm::vec3(0.0f);
-    glm::vec3 rotation = glm::vec3(0.0f);
-    glm::vec3 scale = glm::vec3(1.0f);
+    friend class GameObjectTransform;
 
-    bool lock_cache = false;
-    void updatecache();
+    protected:
+        glm::vec3 position = glm::vec3(0.0f);
+        glm::vec3 rotation = glm::vec3(0.0f);
+        glm::vec3 scale = glm::vec3(1.0f);
 
-    // cache:
-    glm::quat rot_quat;
-    glm::mat4 rot_mat;
+        bool lock_cache = false;
+        void updatecache();
 
-    glm::vec3 front, up, right;
+        // == cache: ==
+        glm::quat rot_quat;
+        glm::mat4 rot_mat;
 
-    //void callback_onchange();
+        glm::vec3 front, up, right;
+        // == ====== ==
 
-    void OnTransformUpdated();
+        void wrapscale();
 
-  public:
-    //std::vector<std::function<void (Transform *)>> onTransformChangeCallbacks = std::vector<std::function<void (Transform *)>>();
+        // == callbacks ==
+        virtual void OnTransformChanged();
 
-    Transform(glm::vec3 pos, glm::vec3 rot, glm::vec3 scl);
-    Transform(glm::vec3 pos, glm::vec3 rot);
-    Transform(glm::vec3 pos);
-    Transform();
+    public:
+        Transform(glm::vec3 pos, glm::vec3 rot, glm::vec3 scl);
+        Transform(glm::vec3 pos, glm::vec3 rot);
+        Transform(glm::vec3 pos);
+        Transform();
 
-    Transform Copy();
+        virtual ~Transform();
 
-    bool IsCacheLocked();
-    void SetLockCache(bool lock);
-    void LockCache();
-    void UnlockCache();
+        Transform Copy();
 
-    void UpdateCache();
+        bool IsCacheLocked();
+        void SetLockCache(bool lock);
+        void LockCache();
+        void UnlockCache();
 
-    glm::vec3 GetPosition();
-    
-    glm::vec3 GetRotation();
-    glm::quat GetRotationQuaternion();
-    glm::mat4 GetRotationMatrix();
+        void UpdateCache();
 
-    glm::vec3 GetScale();
+        glm::vec3 GetPosition();
 
-    glm::vec3 GetFront();
-    glm::vec3 GetUp();
-    glm::vec3 GetRight();
+        glm::vec3 GetRotation();
+        glm::quat GetRotationQuaternion();
+        glm::mat4 GetRotationMatrix();
 
-    glm::mat4 GetTransformationMatrix();
+        glm::vec3 GetScale();
 
-    void SetPosition(glm::vec3 v);
-    void SetRotation(glm::vec3 v);
-    void SetScale(glm::vec3 v);
+        glm::vec3 GetFront();
+        glm::vec3 GetUp();
+        glm::vec3 GetRight();
 
-    void Translate(glm::vec3 v);
-    void Rotate(glm::vec3 v);
-    void Scale(glm::vec3 v);
+        glm::mat4 GetTransformationMatrix();
+
+        void SetPosition(glm::vec3 v);
+        void SetRotation(glm::vec3 v);
+        void SetScale(glm::vec3 v);
+
+        void Translate(glm::vec3 v);
+        void Rotate(glm::vec3 v);
+        void Scale(glm::vec3 v);
+
+        Transform operator+(Transform other);
+        Transform operator-(Transform other);
+
+        std::string ToString();
 };
 
 

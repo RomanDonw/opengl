@@ -5,7 +5,6 @@
 #include "objects/GameObject.hpp"
 #include "objects/AudioClip.hpp"
 #include "objects/AudioSource.hpp"
-#include "objects/AudioSourceTransform.hpp"
 
 struct
 {
@@ -629,7 +628,7 @@ class Entity : public GameObject
             }
             else sp->SetUniformInteger("hasTexture", GL_FALSE);
 
-            sp->SetUniformMatrix4x4("model", GetParentGlobalTransformationMatrix() * transform.GetTransformationMatrix() * surface.transform.GetTransformationMatrix());
+            sp->SetUniformMatrix4x4("model", GetParentGlobalTransform().GetTransformationMatrix() * transform.GetTransformationMatrix() * surface.transform.GetTransformationMatrix());
             sp->SetUniformVector4("color", color * surface.color);
 
             mesh->RenderMesh();

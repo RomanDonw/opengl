@@ -5,36 +5,34 @@
 
 #include "Transform.hpp"
 #include "GameObject.hpp"
-#include "AudioSourceTransform.hpp"
 #include "AudioClip.hpp"
 
 class AudioSource : public GameObject
 {
-  private:
-    ALuint source;
-    bool looped = false;
-
-    void constructor();
-
-  public:
     friend class AudioClip;
-    friend class AudioSourceTransform;
 
-    const GameObjectType type = AUDIOSOURCE;
+    protected:
+        ALuint source;
+        bool looped = false;
 
-    AudioSourceTransform transform;
+        void constructor();
 
-    AudioSource(Transform t);
-    AudioSource();
+        void OnGlobalTransformChanged() override;
 
-    ~AudioSource();
+    public:
+        const GameObjectType type = AUDIOSOURCE;
 
-    void SetSourceFloat(ALenum option, float value);
+        AudioSource(Transform t);
+        AudioSource();
 
-    bool IsLooped();
-    void SetLooping(bool loop);
+        ~AudioSource() override;
 
-    void PlayClip(AudioClip *clip);
+        void SetSourceFloat(ALenum option, float value);
+
+        bool IsLooped();
+        void SetLooping(bool loop);
+
+        void PlayClip(AudioClip *clip);
 };
 
 #endif

@@ -1,0 +1,25 @@
+#ifndef AUDIOSOURCETRANSFORM_HPP
+#define AUDIOSOURCETRANSFORM_HPP
+
+#include "../glm.hpp"
+#include "../openal.hpp"
+
+//#include "AudioSource.hpp"
+#include "Transform.hpp"
+//#include "GameObject.hpp"
+
+class AudioSource;
+
+class AudioSourceTransform : public Transform
+{
+    friend class AudioSource;
+
+    private:
+        AudioSource *source;
+
+        void OnTransformChanged();
+
+        AudioSourceTransform(AudioSource *src);
+};
+
+#endif
