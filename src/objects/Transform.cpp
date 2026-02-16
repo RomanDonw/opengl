@@ -4,8 +4,6 @@
 
 // === PRIVATE ===
 
-void Transform::updatecache() { if (!lock_cache) UpdateCache(); }
-
 void Transform::wrapscale()
 {
     if (scale.x <= 0) scale.x = 1;
@@ -17,83 +15,107 @@ void Transform::OnTransformChanged() {}
 
 // === PUBLIC ===
 
-Transform::Transform(glm::vec3 pos, glm::vec3 rot, glm::vec3 scl)
+Transform::Transform(glm::vec3 pos, glm::quat rot, glm::vec3 scl)
 {
     position = pos;
     rotation = rot;
     scale = scl;
-    UpdateCache();
+
+    wrapscale();
+    OnTransformChanged();
 }
 
-Transform::Transform(glm::vec3 pos, glm::vec3 rot)
+/*Transform::Transform(glm::vec3 pos, glm::vec3 rot_euler, glm::vec3 scl)
 {
     position = pos;
-    rotation = Utils::wrapangles(rot);
-    UpdateCache();
+    rotation = glm::quat(rot_euler);
+    scale = scl;
+
+    wrapscale();
+    OnTransformChanged();
+}*/
+
+Transform::Transform(glm::vec3 pos, glm::quat rot)
+{
+    position = pos;
+    rotation = rot;
+    OnTransformChanged();
 }
+
+/*Transform::Transform(glm::vec3 pos, glm::vec3 rot_euler)
+{
+    position = pos;
+    rotation = glm::quat(rot_euler);
+    OnTransformChanged();
+}*/
 
 Transform::Transform(glm::vec3 pos)
 {
     position = pos;
-    UpdateCache();
+    OnTransformChanged();
 }
 
-Transform::Transform() { UpdateCache(); }
+Transform::Transform() { OnTransformChanged(); }
 
 Transform::~Transform() {}
 
 Transform Transform::Copy() { return *this; }
 
-void Transform::UpdateCache()
-{
-    rotation = Utils::wrapangles(rotation);
-    rot_quat = glm::quat(rotation);
-    rot_mat = glm::toMat4(rot_quat);
-
-    front = rot_quat * glm::vec3(0.0f, 0.0f, -1.0f);
-    up = rot_quat * glm::vec3(0.0f, 1.0f, 0.0f);
-    right = rot_quat * glm::vec3(1.0f, 0.0f, 0.0f);
-
-    OnTransformChanged();
-}
-
-bool Transform::IsCacheLocked() { return lock_cache; }
-void Transform::SetLockCache(bool lock) { lock_cache = lock; }
-void Transform::LockCache() { lock_cache = true; }
-void Transform::UnlockCache() { lock_cache = false; }
-
-glm::vec3 Transform::GetPosition() { return position; }
-
-glm::vec3 Transform::GetRotation() { return rotation; }
-glm::quat Transform::GetRotationQuaternion() { return rot_quat; }
-glm::mat4 Transform::GetRotationMatrix() { return rot_mat; }
-
-glm::vec3 Transform::GetScale() { return scale; }
-
-glm::vec3 Transform::GetFront() { return front; }
-glm::vec3 Transform::GetUp() { return up; }
-glm::vec3 Transform::GetRight() { return right; }
-
-glm::mat4 Transform::GetTransformationMatrix() { return glm::scale(glm::translate(glm::mat4(1), position) * rot_mat, scale); }
-
-void Transform::SetPosition(glm::vec3 v) { position = v; OnTransformChanged(); }
-void Transform::SetRotation(glm::vec3 v) { rotation = v; updatecache(); }
-void Transform::SetScale(glm::vec3 v) { scale = v; wrapscale(); OnTransformChanged(); }
-
-void Transform::Translate(glm::vec3 v) { position += v; OnTransformChanged(); }
-void Transform::Rotate(glm::vec3 v) { rotation += v; updatecache(); }
-void Transform::Scale(glm::vec3 v) { scale += v; wrapscale(); OnTransformChanged(); }
-
-Transform Transform::operator+(Transform other)
-{ return Transform(position + other.position, rotation + other.rotation, scale * other.scale); }
-
-Transform Transform::operator-(Transform other)
-{ return Transform(position - other.position, rotation - other.rotation, scale / other.scale); }
-
 std::string Transform::ToString()
 {
     std::ostringstream ss;
-    ss << "{pos:[" << position.x << "; " << position.y << "; " << position.z << "], rot:[" << rotation.x << "; " << rotation.y << "; " << rotation.z << "], ";
+    glm::vec3 rot = glm::eulerAngles(rotation);
+    ss << "{pos:[" << position.x << "; " << position.y << "; " << position.z << "], rot(euler):[" << rot.x << "; " << rot.y << "; " << rot.z << "], ";
     ss << "scl:[" << scale.x << "; " << scale.y << "; " << scale.z << "]}";
     return ss.str();
 }
+
+// ================================
+
+glm::vec3 Transform::GetPosition() { return position; }
+glm::quat Transform::GetRotation() { return rotation; }
+glm::mat4 Transform::GetRotationMatrix() { return glm::toMat4(rotation); }
+glm::vec3 Transform::GetScale() { return scale; }
+
+// ================================
+
+glm::vec3 Transform::GetFront() { return rotation * glm::vec3(0, 0, -1); }
+glm::vec3 Transform::GetUp() { return rotation * glm::vec3(0, 1, 0); }
+glm::vec3 Transform::GetRight() { return rotation * glm::vec3(1, 0, 0); }
+
+// ================================
+
+glm::mat4 Transform::GetTransformationMatrix()
+{ return glm::scale(glm::translate(glm::mat4(1), position) * GetRotationMatrix(), scale); }
+
+// ================================
+
+void Transform::SetPosition(glm::vec3 v) { position = v; OnTransformChanged(); }
+void Transform::SetRotation(glm::quat q) { rotation = q; OnTransformChanged(); }
+void Transform::SetScale(glm::vec3 v) { scale = v; wrapscale(); OnTransformChanged(); }
+
+// ================================
+
+void Transform::Translate(glm::vec3 v) { position += v; OnTransformChanged(); }
+void Transform::Rotate(glm::quat q) { rotation = q * rotation; OnTransformChanged(); }
+void Transform::Scale(glm::vec3 v) { scale += v; wrapscale(); OnTransformChanged(); }
+
+// ================================
+
+Transform Transform::LocalToGlobal(const Transform *origin)
+{
+    glm::vec3 pos = origin->rotation * position + origin->position;
+    glm::quat rot = origin->rotation * rotation;
+    glm::vec3 scl = origin->scale * scale;
+    return Transform(pos, rot, scl);
+}
+Transform Transform::LocalToGlobal(Transform origin) { return LocalToGlobal(&origin); }
+
+Transform Transform::GlobalToLocal(const Transform *origin)
+{
+    glm::vec3 pos = glm::inverse(origin->rotation) * (position - origin->position);
+    glm::quat rot = glm::inverse(origin->rotation) * rotation;
+    glm::vec3 scl = scale / origin->scale;
+    return Transform(pos, rot, scl);
+}
+Transform Transform::GlobalToLocal(Transform origin) { return GlobalToLocal(&origin); }

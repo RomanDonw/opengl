@@ -168,6 +168,8 @@ int main()
         return 1;
     }
     alcMakeContextCurrent(alctx);
+
+    alDistanceModel(AL_LINEAR_DISTANCE);
     
     //ShaderProgram sp(vertexShaderSource, fragmentShaderSource);
     ShaderProgram sp;
@@ -322,13 +324,13 @@ int main()
     e2.surfaces.push_back(Surface(&tex16, &tri));
     e2.color = {1.0f, 1.0f, 1.0f, 0.5f};
 
-    Entity e3 = Entity(Transform({0.0f, 0.0f, -10.0f}, glm::vec3(0.0f), {1.0f, 10.0f, 1.0f}));
+    Entity e3 = Entity(Transform({0.0f, 0.0f, -10.0f}, glm::quat(glm::vec3(0.0f)), {1.0f, 10.0f, 1.0f}));
     e3.surfaces.push_back(Surface(&tex16_rgb, &tri));
 
-    Entity e4 = Entity(Transform({0, 0, -13}, glm::vec3(0), {3.0f, 1.0f, 1.0f}));
+    Entity e4 = Entity(Transform({0, 0, -13}, glm::quat(glm::vec3(0)), {3.0f, 1.0f, 1.0f}));
     e4.surfaces.push_back(Surface(&tex_cube, &cube));
 
-    Entity crowbar = Entity(Transform({-10, 0, 0}, {0, 0, 0}, {0.1, 0.1, 0.1}));
+    Entity crowbar = Entity(Transform({-10, 0, 0}, glm::quat({0, 0, 0}), {0.1, 0.1, 0.1}));
     crowbar.surfaces.push_back(Surface(&crowbar_head, &crowbar_head_tex));
     crowbar.surfaces.push_back(Surface(&crowbar_cyl, &crowbar_cyl_tex));
 
@@ -374,6 +376,9 @@ int main()
 
     AudioSource source = AudioSource();
     source.SetLooping(true);
+    source.SetSourceFloat(AL_REFERENCE_DISTANCE, 0);
+    source.SetSourceFloat(AL_MAX_DISTANCE, 5);
+
     source.PlayClip(&testclip);
     source.SetParent(&e_cube_surfrottest, false);
     //source.transform = Transform();
@@ -382,13 +387,27 @@ int main()
     if (zapclip.LoadUCSOUNDFromFile("zapmachine.ucsound")) std::cout << "loaded sound \"/zapmachine.ucsound\"." << std::endl;
 
     AudioSource zapsrc = AudioSource();
+    
     zapsrc.SetLooping(true);
+    zapsrc.SetSourceFloat(AL_REFERENCE_DISTANCE, 0);
+    zapsrc.SetSourceFloat(AL_MAX_DISTANCE, 2);
+
     zapsrc.PlayClip(&zapclip);
     zapsrc.SetParent(&e, false);
 
     //source.SetMaxDistance(2);
     //source.SetMinGain(0);
     //source.SetMaxGain(1);
+
+    Entity relsys_e_parent = Entity(Transform({-3, 0, 5}));
+    relsys_e_parent.surfaces.push_back(Surface(&cube));
+    relsys_e_parent.color = {0, 1, 0, 1};
+
+    Entity relsys_e_child = Entity(Transform());
+    relsys_e_child.SetParent(&relsys_e_parent, false);
+    relsys_e_child.transform.SetPosition({0, 0, 2});
+    relsys_e_child.surfaces.push_back(Surface(&cube));
+    relsys_e_child.color = {1, 0, 1, 1};
 
     bool lmb_pressed = false;
     float lastX = windowWidth / 2, lastY = windowHeight / 2;
@@ -443,16 +462,18 @@ int main()
 
                 double mouseX, mouseY;
                 glfwGetCursorPos(window, &mouseX, &mouseY);
+                //std::cout << glm::degrees(r.x) << " " << glm::degrees(r.y) << " " << glm::degrees(r.z) << std::endl;
 
-                glm::vec3 r = t->GetRotation();
+                cam.transform.Rotate(glm::quat(glm::vec3(0, -glm::radians((mouseX - lastX) * MOUSE_SENSITIVITY), 0)));
+                cam.transform.Rotate(glm::quat(glm::vec3(-glm::radians((mouseY - lastY) * MOUSE_SENSITIVITY), 0, 0)));
 
-                r.y -= glm::radians((mouseX - lastX) * MOUSE_SENSITIVITY);
-                r.x -= glm::radians((mouseY - lastY) * MOUSE_SENSITIVITY);
-                if (glm::degrees(r.x) > 89.0f) r.x = glm::radians(89.0f);
-                if (glm::degrees(r.x) < -89.0f) r.x = glm::radians(-89.0f);
-                r.y = fmod(r.y, 360);
+                glm::vec3 r = glm::eulerAngles(t->GetRotation());
+                if (glm::degrees(r.x) > 89.0f) cam.transform.SetRotation(glm::quat({89.0f, r.y, r.z}));
+                if (glm::degrees(r.x) < -89.0f) cam.transform.SetRotation(glm::quat({-89.0f, r.y, r.z}));
+                //t->SetRotation(r);
 
-                t->SetRotation(r);
+                r = glm::eulerAngles(t->GetRotation());
+                cam.transform.SetRotation(glm::quat({r.x, r.y, 0}));
 
                 lastX = mouseX;
                 lastY = mouseY;
@@ -477,6 +498,7 @@ int main()
 
             //e4.SetRotation(e4.GetRotation() + glm::vec3(0, glm::radians(90.0f) * delta, glm::radians(30.0f) * delta));
 
+            relsys_e_parent.transform.Rotate(glm::quat({0, glm::radians(45.0f) * delta, 0}));
 
             /*prop.SetPosition(prop.GetPosition() + glm::vec3(0.0f, -5.0f * delta, 0.0f));
 
@@ -541,13 +563,17 @@ int main()
             glm::mat4 proj = cam.GetProjectionMatrix(windowWidth, windowHeight);
 
             e.Render(&sp, &view, &proj, &cam.transform, &fogs);
-            e2.Render(&sp, &view, &proj, &cam.transform, &fogs);
             e3.Render(&sp, &view, &proj, &cam.transform, &fogs);
             e4.Render(&sp, &view, &proj, &cam.transform, &fogs);
 
             crowbar.Render(&sp, &view, &proj, &cam.transform, &fogs);
 
             e_cube_surfrottest.Render(&sp, &view, &proj, &cam.transform, &fogs);
+
+            e2.Render(&sp, &view, &proj, &cam.transform, &fogs);
+
+            relsys_e_parent.Render(&sp, &view, &proj, &cam.transform, &fogs);
+            relsys_e_child.Render(&sp, &view, &proj, &cam.transform, &fogs);
 
             //ground.Render(&sp, &view, &proj);
             //prop.Render(&sp, &view, &proj);

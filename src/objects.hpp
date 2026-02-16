@@ -584,7 +584,7 @@ class Entity : public GameObject
         glActiveTexture(GL_TEXTURE0);
 
         sp->SetUniformVector3("cameraPosition", cameraTransform->GetPosition());
-        sp->SetUniformVector3("cameraRotation", cameraTransform->GetRotation());
+        sp->SetUniformVector3("cameraRotation", glm::eulerAngles(cameraTransform->GetRotation()));
 
         sp->SetUniformVector3("cameraFront", cameraTransform->GetFront());
         sp->SetUniformVector3("cameraUp", cameraTransform->GetUp());

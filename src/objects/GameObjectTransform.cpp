@@ -17,11 +17,9 @@ void GameObjectTransform::OnTransformChanged()
 
 GameObjectTransform *GameObjectTransform::operator=(Transform other)
 {
-    position = other.position;
-    rotation = other.rotation;
-    scale = other.scale;
-
-    UpdateCache();
+    position = other.GetPosition();
+    rotation = other.GetRotation();
+    scale = other.GetScale();
 
     return this;
 }

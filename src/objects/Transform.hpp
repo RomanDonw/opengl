@@ -6,26 +6,16 @@
 
 #include <string>
 
-class GameObjectTransform;
+//class GameObjectTransform;
 
 class Transform
 {
-    friend class GameObjectTransform;
+    //friend class GameObjectTransform;
 
     protected:
         glm::vec3 position = glm::vec3(0.0f);
-        glm::vec3 rotation = glm::vec3(0.0f);
+        glm::quat rotation = glm::quat(glm::vec3(0, 0, 0));
         glm::vec3 scale = glm::vec3(1.0f);
-
-        bool lock_cache = false;
-        void updatecache();
-
-        // == cache: ==
-        glm::quat rot_quat;
-        glm::mat4 rot_mat;
-
-        glm::vec3 front, up, right;
-        // == ====== ==
 
         void wrapscale();
 
@@ -33,8 +23,8 @@ class Transform
         virtual void OnTransformChanged();
 
     public:
-        Transform(glm::vec3 pos, glm::vec3 rot, glm::vec3 scl);
-        Transform(glm::vec3 pos, glm::vec3 rot);
+        Transform(glm::vec3 pos, glm::quat rot, glm::vec3 scl);
+        Transform(glm::vec3 pos, glm::quat rot);
         Transform(glm::vec3 pos);
         Transform();
 
@@ -42,39 +32,44 @@ class Transform
 
         Transform Copy();
 
-        bool IsCacheLocked();
-        void SetLockCache(bool lock);
-        void LockCache();
-        void UnlockCache();
+        std::string ToString();
 
-        void UpdateCache();
+        // ================================
 
         glm::vec3 GetPosition();
-
-        glm::vec3 GetRotation();
-        glm::quat GetRotationQuaternion();
+        glm::quat GetRotation();
         glm::mat4 GetRotationMatrix();
-
         glm::vec3 GetScale();
+
+        // ================================
 
         glm::vec3 GetFront();
         glm::vec3 GetUp();
         glm::vec3 GetRight();
 
+        // ================================
+
         glm::mat4 GetTransformationMatrix();
 
+        // ================================
+
         void SetPosition(glm::vec3 v);
-        void SetRotation(glm::vec3 v);
+        void SetRotation(glm::quat q);
         void SetScale(glm::vec3 v);
 
+        // ================================
+
         void Translate(glm::vec3 v);
-        void Rotate(glm::vec3 v);
+        void Rotate(glm::quat q);
         void Scale(glm::vec3 v);
 
-        Transform operator+(Transform other);
-        Transform operator-(Transform other);
+        // ================================
 
-        std::string ToString();
+        Transform LocalToGlobal(const Transform *origin);
+        Transform LocalToGlobal(Transform origin);
+
+        Transform GlobalToLocal(const Transform *origin);
+        Transform GlobalToLocal(Transform origin);
 };
 
 
