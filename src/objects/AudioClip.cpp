@@ -9,7 +9,7 @@
 AudioClip::AudioClip() { alGenBuffers(1, &buffer); }
 AudioClip::~AudioClip() { alDeleteBuffers(1, &buffer); }
 
-bool AudioClip::LoadUCSOUNDFromFile(std::string filename)
+bool AudioClip::LoadFromUCSOUNDFile(std::string filename)
 {
     if (!std::filesystem::is_regular_file(filename)) return false;
 

@@ -366,7 +366,7 @@ int main()
     fogs.fogEndDistance = 5;
 
     AudioClip testclip = AudioClip();
-    if (testclip.LoadUCSOUNDFromFile("test.ucsound")) std::cout << "Successfully loaded sound from \"/test.ucsound\" file!" << std::endl;
+    if (testclip.LoadFromUCSOUNDFile("test.ucsound")) std::cout << "Successfully loaded sound from \"/test.ucsound\" file!" << std::endl;
 
     AudioSource source = AudioSource();
     source.SetParent(&e_cube_surfrottest, false);
@@ -379,7 +379,7 @@ int main()
     //source.transform = Transform();
 
     AudioClip zapclip = AudioClip();
-    if (zapclip.LoadUCSOUNDFromFile("zapmachine.ucsound")) std::cout << "loaded sound \"/zapmachine.ucsound\"." << std::endl;
+    if (zapclip.LoadFromUCSOUNDFile("zapmachine.ucsound")) std::cout << "loaded sound \"/zapmachine.ucsound\"." << std::endl;
 
     AudioSource zapsrc = AudioSource();
     zapsrc.SetParent(&e, false);
@@ -389,6 +389,18 @@ int main()
     zapsrc.SetSourceFloat(AL_MAX_DISTANCE, 5);
 
     zapsrc.PlayClip(&zapclip);
+
+    AudioClip labdroneclip = AudioClip();
+    if (labdroneclip.LoadFromUCSOUNDFile("labdrone2.ucsound")) std::cout << "loaded sound \"/labdrone2.ucsound\"." << std::endl;
+
+    AudioSource labdronesrc = AudioSource();
+    labdronesrc.SetParent(&e, false);
+    
+    labdronesrc.SetLooping(true);
+    labdronesrc.SetSourceFloat(AL_REFERENCE_DISTANCE, 0);
+    labdronesrc.SetSourceFloat(AL_MAX_DISTANCE, 5);
+
+    labdronesrc.PlayClip(&labdroneclip);
 
     //source.SetMaxDistance(2);
     //source.SetMinGain(0);
@@ -460,18 +472,21 @@ int main()
 
                 double mouseX, mouseY;
                 glfwGetCursorPos(window, &mouseX, &mouseY);
-                //std::cout << glm::degrees(r.x) << " " << glm::degrees(r.y) << " " << glm::degrees(r.z) << std::endl;
 
-                cam.transform.Rotate(glm::quat(glm::vec3(0, -glm::radians((mouseX - lastX) * MOUSE_SENSITIVITY), 0)));
-                cam.transform.Rotate(glm::quat(glm::vec3(-glm::radians((mouseY - lastY) * MOUSE_SENSITIVITY), 0, 0)));
+                float mxoff = -glm::radians((mouseX - lastX) * MOUSE_SENSITIVITY);
+                float myoff = -glm::radians((mouseY - lastY) * MOUSE_SENSITIVITY);
+                {
+                    glm::quat delta_pitch = glm::angleAxis(myoff, glm::vec3(1, 0, 0));
+                    glm::quat delta_yaw = glm::angleAxis(mxoff, glm::vec3(0, 1, 0));
 
-                glm::vec3 r = glm::eulerAngles(t->GetRotation());
-                if (glm::degrees(r.x) > 89.0f) cam.transform.SetRotation(glm::quat({89.0f, r.y, r.z}));
-                if (glm::degrees(r.x) < -89.0f) cam.transform.SetRotation(glm::quat({-89.0f, r.y, r.z}));
-                //t->SetRotation(r);
+                    glm::quat new_rotation = delta_yaw * t->GetRotation() * delta_pitch;
 
-                r = glm::eulerAngles(t->GetRotation());
-                cam.transform.SetRotation(glm::quat({r.x, r.y, 0}));
+                    glm::vec3 front = new_rotation * glm::vec3(0, 0, -1);
+                    glm::vec3 front_xz = glm::normalize(glm::vec3(front.x, 0, front.z));
+
+                    if (glm::dot(front, front_xz) >= glm::cos(glm::radians(60.0f))) t->SetRotation(new_rotation);
+                    else t->Rotate(delta_yaw);
+                }
 
                 lastX = mouseX;
                 lastY = mouseY;
@@ -549,13 +564,6 @@ int main()
                 glm::vec3 relvel = vel;
                 
             }*/
-
-            /*alListenerfv(AL_POSITION, glm::value_ptr(cam.transform.GetPosition()));
-            
-            ListenerOrientation orient;
-            orient.front = cam.transform.GetFront();
-            orient.up = cam.transform.GetUp();
-            alListenerfv(AL_ORIENTATION, (ALfloat *)&orient);*/
 
             glm::mat4 view = cam.GetViewMatrix();
             glm::mat4 proj = cam.GetProjectionMatrix(windowWidth, windowHeight);
