@@ -6,7 +6,7 @@
 
 // === PRIVATE ===
 
-GameObjectTransform::GameObjectTransform(GameObject *obj) : object(obj) {}
+GameObjectTransform::GameObjectTransform(GameObject *obj) : Transform(), object(obj) {}
 
 void GameObjectTransform::OnTransformChanged()
 {
@@ -17,9 +17,6 @@ void GameObjectTransform::OnTransformChanged()
 
 GameObjectTransform *GameObjectTransform::operator=(Transform other)
 {
-    position = other.GetPosition();
-    rotation = other.GetRotation();
-    scale = other.GetScale();
-
+    Transform::operator=(other);
     return this;
 }

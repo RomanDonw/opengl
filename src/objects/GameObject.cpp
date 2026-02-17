@@ -14,8 +14,8 @@ void GameObject::OnGlobalTransformChanged() { for (GameObject *obj : children) o
 
 // === PUBLIC ===
 
-GameObject::GameObject(Transform t) : transform(this) { transform = t; }
-GameObject::GameObject() : transform(this) {}
+GameObject::GameObject(Transform t) : transform(this) { transform = t; /*OnLocalTransformChanged();*/ }
+GameObject::GameObject() : transform(this) { /*OnLocalTransformChanged();*/ }
 
 GameObject::~GameObject()
 {

@@ -56,6 +56,7 @@
 
             "src/objects/AudioClip.cpp",
             "src/objects/AudioSource.cpp",
+            "src/objects/AudioListener.cpp",
 
             "src/objects/GameObject.cpp",
             "src/objects/GameObjectTransform.cpp"

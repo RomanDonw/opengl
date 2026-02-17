@@ -5,6 +5,7 @@
 #include "objects/GameObject.hpp"
 #include "objects/AudioClip.hpp"
 #include "objects/AudioSource.hpp"
+#include "objects/AudioListener.hpp"
 
 struct
 {

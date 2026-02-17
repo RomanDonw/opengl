@@ -13,7 +13,8 @@ enum
     UNKNOWN = 0,
     ENTITY = 1,
     CAMERA = 2,
-    AUDIOSOURCE = 3
+    AUDIOSOURCE = 3,
+    AUDIOLISTENER = 4
 } typedef GameObjectType;
 
 class GameObject

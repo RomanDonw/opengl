@@ -25,29 +25,12 @@ Transform::Transform(glm::vec3 pos, glm::quat rot, glm::vec3 scl)
     OnTransformChanged();
 }
 
-/*Transform::Transform(glm::vec3 pos, glm::vec3 rot_euler, glm::vec3 scl)
-{
-    position = pos;
-    rotation = glm::quat(rot_euler);
-    scale = scl;
-
-    wrapscale();
-    OnTransformChanged();
-}*/
-
 Transform::Transform(glm::vec3 pos, glm::quat rot)
 {
     position = pos;
     rotation = rot;
     OnTransformChanged();
 }
-
-/*Transform::Transform(glm::vec3 pos, glm::vec3 rot_euler)
-{
-    position = pos;
-    rotation = glm::quat(rot_euler);
-    OnTransformChanged();
-}*/
 
 Transform::Transform(glm::vec3 pos)
 {
@@ -119,3 +102,17 @@ Transform Transform::GlobalToLocal(const Transform *origin)
     return Transform(pos, rot, scl);
 }
 Transform Transform::GlobalToLocal(Transform origin) { return GlobalToLocal(&origin); }
+
+// ================================
+
+Transform *Transform::operator=(Transform other)
+{
+    position = other.position;
+    rotation = other.rotation;
+    scale = other.scale;
+    wrapscale();
+
+    OnTransformChanged();
+
+    return this;
+}

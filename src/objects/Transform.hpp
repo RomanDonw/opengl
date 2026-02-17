@@ -70,6 +70,10 @@ class Transform
 
         Transform GlobalToLocal(const Transform *origin);
         Transform GlobalToLocal(Transform origin);
+
+        // ================================
+
+        Transform *operator=(Transform other);
 };
 
 

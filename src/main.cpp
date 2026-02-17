@@ -113,12 +113,6 @@ void resizeCallback(GLFWwindow *w, int width, int height)
     glViewport(0, 0, windowWidth, windowHeight);
 }
 
-struct
-{
-    glm::vec3 front;
-    glm::vec3 up;
-} typedef ListenerOrientation;
-
 void on_signal(int code)
 {
     switch (code)
@@ -375,25 +369,26 @@ int main()
     if (testclip.LoadUCSOUNDFromFile("test.ucsound")) std::cout << "Successfully loaded sound from \"/test.ucsound\" file!" << std::endl;
 
     AudioSource source = AudioSource();
+    source.SetParent(&e_cube_surfrottest, false);
+
     source.SetLooping(true);
     source.SetSourceFloat(AL_REFERENCE_DISTANCE, 0);
     source.SetSourceFloat(AL_MAX_DISTANCE, 5);
 
     source.PlayClip(&testclip);
-    source.SetParent(&e_cube_surfrottest, false);
     //source.transform = Transform();
 
     AudioClip zapclip = AudioClip();
     if (zapclip.LoadUCSOUNDFromFile("zapmachine.ucsound")) std::cout << "loaded sound \"/zapmachine.ucsound\"." << std::endl;
 
     AudioSource zapsrc = AudioSource();
+    zapsrc.SetParent(&e, false);
     
     zapsrc.SetLooping(true);
     zapsrc.SetSourceFloat(AL_REFERENCE_DISTANCE, 0);
-    zapsrc.SetSourceFloat(AL_MAX_DISTANCE, 2);
+    zapsrc.SetSourceFloat(AL_MAX_DISTANCE, 5);
 
     zapsrc.PlayClip(&zapclip);
-    zapsrc.SetParent(&e, false);
 
     //source.SetMaxDistance(2);
     //source.SetMinGain(0);
@@ -408,6 +403,9 @@ int main()
     relsys_e_child.transform.SetPosition({0, 0, 2});
     relsys_e_child.surfaces.push_back(Surface(&cube));
     relsys_e_child.color = {1, 0, 1, 1};
+
+    AudioListener listener = AudioListener();
+    listener.SetParent(&cam, false);
 
     bool lmb_pressed = false;
     float lastX = windowWidth / 2, lastY = windowHeight / 2;
@@ -552,12 +550,12 @@ int main()
                 
             }*/
 
-            alListenerfv(AL_POSITION, glm::value_ptr(cam.transform.GetPosition()));
+            /*alListenerfv(AL_POSITION, glm::value_ptr(cam.transform.GetPosition()));
             
             ListenerOrientation orient;
             orient.front = cam.transform.GetFront();
             orient.up = cam.transform.GetUp();
-            alListenerfv(AL_ORIENTATION, (ALfloat *)&orient);
+            alListenerfv(AL_ORIENTATION, (ALfloat *)&orient);*/
 
             glm::mat4 view = cam.GetViewMatrix();
             glm::mat4 proj = cam.GetProjectionMatrix(windowWidth, windowHeight);

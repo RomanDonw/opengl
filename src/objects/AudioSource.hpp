@@ -17,6 +17,8 @@ class AudioSource : public GameObject
 
         void constructor();
 
+        void updatesrcpos();
+
         void OnGlobalTransformChanged() override;
 
     public:
