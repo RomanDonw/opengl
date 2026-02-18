@@ -4,10 +4,26 @@
 #include <cstdint>
 #include <cstring>
 #include <filesystem>
-#include <vector>
+
+#include "AudioSource.hpp"
+
+// === PRIVATE ===
+
+void AudioClip::updatebuff(ALenum type, ALvoid *data, ALsizei size, ALsizei freq)
+{
+    for (AudioSource *src : uses_sources) src->Rewind();
+    alBufferData(buffer, type, data, size, freq);
+}
+
+// === PUBLIC ===
 
 AudioClip::AudioClip() { alGenBuffers(1, &buffer); }
-AudioClip::~AudioClip() { alDeleteBuffers(1, &buffer); }
+AudioClip::~AudioClip()
+{
+    for (AudioSource *src : uses_sources) src->SetCurrentClip(nullptr);
+
+    alDeleteBuffers(1, &buffer);
+}
 
 bool AudioClip::LoadFromUCSOUNDFile(std::string filename)
 {
@@ -65,7 +81,7 @@ bool AudioClip::LoadFromUCSOUNDFile(std::string filename)
         data.push_back(byte);
     }
 
-    alBufferData(buffer, altype, data.data(), data.size(), frequency);
+    updatebuff(altype, data.data(), data.size(), frequency);
 
     return true;
 }

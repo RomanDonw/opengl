@@ -25,6 +25,8 @@
 //#include "utils.hpp"
 #include "objects.hpp"
 
+#include "testentities.hpp"
+
 const char *vertexShaderSource = R"(
 #version 330 core
 
@@ -375,7 +377,8 @@ int main()
     source.SetSourceFloat(AL_REFERENCE_DISTANCE, 0);
     source.SetSourceFloat(AL_MAX_DISTANCE, 5);
 
-    source.PlayClip(&testclip);
+    source.SetCurrentClip(&testclip);
+    source.Play();
     //source.transform = Transform();
 
     AudioClip zapclip = AudioClip();
@@ -386,9 +389,11 @@ int main()
     
     zapsrc.SetLooping(true);
     zapsrc.SetSourceFloat(AL_REFERENCE_DISTANCE, 0);
-    zapsrc.SetSourceFloat(AL_MAX_DISTANCE, 5);
+    zapsrc.SetSourceFloat(AL_MAX_DISTANCE, 16);
+    zapsrc.SetSourceFloat(AL_GAIN, 0.4f);
 
-    zapsrc.PlayClip(&zapclip);
+    zapsrc.SetCurrentClip(&zapclip);
+    zapsrc.Play();
 
     AudioClip labdroneclip = AudioClip();
     if (labdroneclip.LoadFromUCSOUNDFile("labdrone2.ucsound")) std::cout << "loaded sound \"/labdrone2.ucsound\"." << std::endl;
@@ -398,9 +403,25 @@ int main()
     
     labdronesrc.SetLooping(true);
     labdronesrc.SetSourceFloat(AL_REFERENCE_DISTANCE, 0);
-    labdronesrc.SetSourceFloat(AL_MAX_DISTANCE, 5);
+    labdronesrc.SetSourceFloat(AL_MAX_DISTANCE, 16);
+    labdronesrc.SetSourceFloat(AL_GAIN, 0.4f);
 
-    labdronesrc.PlayClip(&labdroneclip);
+    labdronesrc.SetCurrentClip(&labdroneclip);
+    labdronesrc.Play();
+
+
+
+    AudioSource labdronesrcpitch150 = AudioSource();
+    labdronesrcpitch150.SetParent(&labdronesrc, false);
+    
+    labdronesrcpitch150.SetLooping(true);
+    labdronesrcpitch150.SetSourceFloat(AL_REFERENCE_DISTANCE, 0);
+    labdronesrcpitch150.SetSourceFloat(AL_MAX_DISTANCE, 16);
+    labdronesrcpitch150.SetSourceFloat(AL_PITCH, 1.5f);
+    labdronesrcpitch150.SetSourceFloat(AL_GAIN, 0.4f);
+
+    labdronesrcpitch150.SetCurrentClip(&labdroneclip);
+    labdronesrcpitch150.Play();
 
     //source.SetMaxDistance(2);
     //source.SetMinGain(0);

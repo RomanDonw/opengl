@@ -12,6 +12,8 @@ const char *AudioListenerAlreadyExistException::what() const noexcept { return "
 
 // === PRIVATE ===
 
+bool AudioListener::hasListener = false;
+
 struct
 {
     glm::vec3 front;

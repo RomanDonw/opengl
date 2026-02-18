@@ -17,7 +17,7 @@ class AudioListenerAlreadyExistException : public std::exception
 class AudioListener : public GameObject
 {
     private:
-        static bool hasListener = false;
+        static bool hasListener;
 
         void constructor();
 

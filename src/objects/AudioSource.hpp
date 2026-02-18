@@ -5,15 +5,26 @@
 
 #include "Transform.hpp"
 #include "GameObject.hpp"
-#include "AudioClip.hpp"
+
+enum
+{
+    UNDEFINED = 0,
+    INIT = 1,
+    PLAYING = 2,
+    PAUSED = 3,
+    STOPPED = 4
+} typedef AudioSourceState;
+
+class AudioClip;
 
 class AudioSource : public GameObject
 {
-    friend class AudioClip;
+    //friend class AudioClip;
 
     protected:
         ALuint source;
-        bool looped = false;
+        AudioClip *currclip = nullptr;
+        bool looped;
 
         void constructor();
 
@@ -34,7 +45,16 @@ class AudioSource : public GameObject
         bool IsLooped();
         void SetLooping(bool loop);
 
-        void PlayClip(AudioClip *clip);
+        AudioSourceState GetState();
+
+        //bool CanClipBeChanged();
+        AudioClip *GetCurrentClip();
+        void SetCurrentClip(AudioClip *clip);
+
+        void Play();
+        void Pause();
+        void Stop();
+        void Rewind();
 };
 
 #endif
