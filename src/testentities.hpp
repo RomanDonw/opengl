@@ -48,6 +48,8 @@ class HL1ToggleButton : public Entity
         bool e_pressed = false;
         double last_interaction_time = -1;
 
+        double interaction_cooldown = 1;
+
     public:
         HL1ToggleButton(Transform t, AudioClip *interaction_sfx) : Entity(t) { constructor(interaction_sfx); }
         HL1ToggleButton(AudioClip *interaction_sfx) : Entity() { constructor(interaction_sfx); }
@@ -85,12 +87,21 @@ class HL1ToggleButton : public Entity
 
                 float dist = glm::length(camtr->GetPosition() - transform.GetPosition());
 
-                if (src.GetState() != PLAYING && dist <= 1)
+                if (glfwGetTime() >= interaction_cooldown + last_interaction_time && dist <= 1)
                 {
                     SetEnabled(!IsEnabled());
+
+                    last_interaction_time = glfwGetTime();
                 }
             }
             else if (e_pressed && glfwGetKey(window, GLFW_KEY_E) == GLFW_RELEASE) e_pressed = false;
+        }
+
+        inline double GetInteractionCooldown() { return interaction_cooldown; }
+        void SetInteractionCooldown(double cooldown)
+        {
+            if (cooldown < 0) cooldown = 0;
+            interaction_cooldown = cooldown;
         }
 };
 
