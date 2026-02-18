@@ -9,7 +9,7 @@
 
 // === PRIVATE ===
 
-void AudioClip::updatebuff(ALenum type, ALvoid *data, ALsizei size, ALsizei freq)
+void AudioClip::updatebuff(ALenum type, const ALvoid *data, ALsizei size, ALsizei freq)
 {
     for (AudioSource *src : uses_sources) src->Rewind();
     alBufferData(buffer, type, data, size, freq);
@@ -64,6 +64,7 @@ bool AudioClip::LoadFromUCSOUNDFile(std::string filename)
             break;
 
         default:
+            fclose(f);
             return false;
     }
 
@@ -83,5 +84,6 @@ bool AudioClip::LoadFromUCSOUNDFile(std::string filename)
 
     updatebuff(altype, data.data(), data.size(), frequency);
 
+    fclose(f);
     return true;
 }

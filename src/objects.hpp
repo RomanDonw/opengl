@@ -221,6 +221,7 @@ class Mesh
         UnlockBuffers();
         GenerateBuffers();
 
+        fclose(f);
         return true;
 
         readmesherrorquit:

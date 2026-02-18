@@ -25,8 +25,6 @@
 //#include "utils.hpp"
 #include "objects.hpp"
 
-#include "testentities.hpp"
-
 const char *vertexShaderSource = R"(
 #version 330 core
 
@@ -125,11 +123,14 @@ void on_signal(int code)
     }
 }
 
+GLFWwindow *window;
+
+#include "testentities.hpp"
+
 int main()
 {
     signal(SIGSEGV, on_signal);
 
-    GLFWwindow *window;
     int ret = initOpenGL(&window);
     if (ret != 0) return ret;
 
@@ -440,6 +441,13 @@ int main()
     AudioListener listener = AudioListener();
     listener.SetParent(&cam, false);
 
+    inittestents();
+
+    AudioClip button8sfx = AudioClip();
+    if (button8sfx.LoadFromUCSOUNDFile("sfx/button/8.ucsound")) std::cout << "loaded \"sfx/button/8.ucsound\"" << std::endl;
+
+    HL1ToggleButton btn = HL1ToggleButton(Transform({0, 0, -2}, glm::quat(glm::radians(glm::vec3(0, 180, 0)))), &button8sfx);
+
     bool lmb_pressed = false;
     float lastX = windowWidth / 2, lastY = windowHeight / 2;
     glfwSetCursorPos(window, lastX, lastY);
@@ -514,6 +522,8 @@ int main()
             }
 
             // ===== MAIN =====
+
+            btn.Update(delta, &cam.transform);
             
             glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -601,6 +611,8 @@ int main()
 
             relsys_e_parent.Render(&sp, &view, &proj, &cam.transform, &fogs);
             relsys_e_child.Render(&sp, &view, &proj, &cam.transform, &fogs);
+
+            btn.Render(&sp, &view, &proj, &cam.transform, &fogs);
 
             //ground.Render(&sp, &view, &proj);
             //prop.Render(&sp, &view, &proj);

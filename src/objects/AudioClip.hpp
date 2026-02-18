@@ -3,8 +3,6 @@
 
 #include "../openal.hpp"
 
-#include "AudioClip.hpp"
-
 #include <string>
 #include <vector>
 
@@ -18,7 +16,7 @@ class AudioClip
         ALuint buffer;
 
         std::vector<AudioSource *> uses_sources = std::vector<AudioSource *>();
-        void updatebuff(ALenum type, ALvoid *data, ALsizei size, ALsizei freq);
+        void updatebuff(ALenum type, const ALvoid *data, ALsizei size, ALsizei freq);
 
     public:
         AudioClip();
