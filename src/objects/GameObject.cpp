@@ -23,7 +23,7 @@ GameObject::~GameObject()
     for (GameObject *obj : children) obj->SetParent(nullptr);
 }
 
-GameObject GameObject::Copy() { return *this; }
+//GameObject GameObject::Copy() { return *this; }
 
 size_t GameObject::SetParent(GameObject *new_parent, bool save_global_pos)
 {

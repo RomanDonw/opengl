@@ -39,7 +39,7 @@ class GameObject
 
         virtual ~GameObject();
 
-        GameObject Copy();
+        //GameObject Copy();
 
         size_t SetParent(GameObject *new_parent, bool save_global_pos = true);
         Transform GetParentGlobalTransform();
