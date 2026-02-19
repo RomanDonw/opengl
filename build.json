@@ -1,7 +1,7 @@
 {
     "compiler":
     {
-        "command": "g++ -c",
+        "command": "g++ -std=c++20 -c",
         "options": "",
         "include-pathes":
         [
@@ -58,6 +58,8 @@
             "src/objects/AudioClip.cpp",
             "src/objects/AudioSource.cpp",
             "src/objects/AudioListener.cpp",
+            "src/objects/AudioEffect.cpp",
+            "src/objects/AudioEffectSlot.cpp",
 
             "src/objects/GameObject.cpp",
             "src/objects/GameObjectTransform.cpp"

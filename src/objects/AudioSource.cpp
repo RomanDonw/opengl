@@ -5,6 +5,7 @@
 #include <algorithm>
 
 #include "AudioClip.hpp"
+#include "AudioEffectSlot.hpp"
 
 // === PRIVATE ===
 
@@ -36,6 +37,8 @@ AudioSource::AudioSource() : GameObject() { constructor(); }
 AudioSource::~AudioSource()
 {
     SetCurrentClip(nullptr);
+    if (attached_slot) attached_slot->RemoveSource(this);
+
     alDeleteSources(1, &source);
 }
 

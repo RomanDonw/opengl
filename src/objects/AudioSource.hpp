@@ -16,15 +16,17 @@ enum
 } typedef AudioSourceState;
 
 class AudioClip;
+class AudioEffectSlot;
 
 class AudioSource : public GameObject
 {
-    //friend class AudioClip;
+    friend class AudioEffectSlot;
 
     protected:
         ALuint source;
         AudioClip *currclip = nullptr;
         bool looped;
+        AudioEffectSlot *attached_slot = nullptr;
 
         void constructor();
 
