@@ -1,48 +1,35 @@
 #ifndef TESTENTITIES_HPP
 #define TESTENTITIES_HPP
 
-Mesh buttonmesh = Mesh();
-
-Texture buttontoggletex_on = Texture();
-Texture buttontoggletex_off = Texture();
-
-void inittestents()
+struct
 {
-    if (buttonmesh.LoadFromUCMESHFile("models/buttons/4.ucmesh")) std::cout << "loaded \"models/buttons/4.ucmesh\"" << std::endl;
+    Mesh *mesh;
+    
+    Texture *on_texture;
+    Texture *off_texture;
 
-    if (buttontoggletex_on.LoadFromUCTEXFile("textures/button/4_on.uctex")) std::cout << "loaded \"textures/button/4_on.uctex\"" << std::endl;
-    if (buttontoggletex_off.LoadFromUCTEXFile("textures/button/4_off.uctex")) std::cout << "loaded \"textures/button/4_off.uctex\"" << std::endl;
-
-    buttontoggletex_on.SetDefaultParametres();
-    buttontoggletex_off.SetDefaultParametres();
-
-    buttontoggletex_on.SetTextureIntParameter(GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    buttontoggletex_on.SetTextureIntParameter(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    buttontoggletex_off.SetTextureIntParameter(GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    buttontoggletex_off.SetTextureIntParameter(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-}
+    AudioClip *interaction_sfx;
+    AudioClip *locked_sfx;
+} typedef HL1ToggleButtonSettings;
 
 class HL1ToggleButton : public Entity
 {
     private:
         bool enabled = false;
         AudioSource src = AudioSource();
+        HL1ToggleButtonSettings settings;
 
-        
-
-        void constructor(AudioClip *interaction_sfx)
+        void constructor(HL1ToggleButtonSettings _settings)
         {
+            settings = _settings;
+
             src.SetParent(this, false);
 
             src.SetSourceFloat(AL_REFERENCE_DISTANCE, 0);
             src.SetSourceFloat(AL_MAX_DISTANCE, 4);
-            //src->SetSourceFloat(AL_PITCH, 1.5f);
             src.SetSourceFloat(AL_GAIN, 2.0f);
 
-            src.SetCurrentClip(interaction_sfx);
-
-            surfaces.push_back(Surface(&buttonmesh, &buttontoggletex_off));
+            surfaces.push_back(Surface(settings.mesh, settings.off_texture));
         }
 
         bool e_pressed = false;
@@ -51,8 +38,12 @@ class HL1ToggleButton : public Entity
         double interaction_cooldown = 1;
 
     public:
-        HL1ToggleButton(Transform t, AudioClip *interaction_sfx) : Entity(t) { constructor(interaction_sfx); }
-        HL1ToggleButton(AudioClip *interaction_sfx) : Entity() { constructor(interaction_sfx); }
+        bool locked = false;
+
+        std::function<void (HL1ToggleButton *)> OnClickCallback = nullptr;
+
+        HL1ToggleButton(Transform t, HL1ToggleButtonSettings _settings) : Entity(t) { constructor(_settings); }
+        HL1ToggleButton(HL1ToggleButtonSettings _settings) : Entity() { constructor(_settings); }
 
         ~HL1ToggleButton()
         {
@@ -64,10 +55,10 @@ class HL1ToggleButton : public Entity
         {
             enabled = enable;
 
-            if (enabled) surfaces[0].SetTexture(&buttontoggletex_on);
-            else surfaces[0].SetTexture(&buttontoggletex_off);
+            if (enabled) surfaces[0].SetTexture(settings.on_texture);
+            else surfaces[0].SetTexture(settings.off_texture);
 
-            //src->Rewind();
+            src.SetCurrentClip(settings.interaction_sfx);
             src.Play();
         }
 
@@ -89,7 +80,16 @@ class HL1ToggleButton : public Entity
 
                 if (glfwGetTime() >= interaction_cooldown + last_interaction_time && dist <= 1)
                 {
-                    SetEnabled(!IsEnabled());
+                    if (!locked)
+                    {
+                        SetEnabled(!IsEnabled());
+                        if (OnClickCallback) OnClickCallback(this);
+                    }
+                    else
+                    {
+                        src.SetCurrentClip(settings.locked_sfx);
+                        src.Play();
+                    }
 
                     last_interaction_time = glfwGetTime();
                 }

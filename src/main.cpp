@@ -8,7 +8,7 @@
 #include <cstring>
 #include <sstream>
 #include <algorithm>
-//#include <functional>
+#include <functional>
 #include <cstdlib>
 
 #include <csignal>
@@ -391,10 +391,11 @@ int main()
     zapsrc.SetLooping(true);
     zapsrc.SetSourceFloat(AL_REFERENCE_DISTANCE, 0);
     zapsrc.SetSourceFloat(AL_MAX_DISTANCE, 16);
-    zapsrc.SetSourceFloat(AL_GAIN, 0.4f);
+    zapsrc.SetSourceFloat(AL_GAIN, 1.0f);
 
     zapsrc.SetCurrentClip(&zapclip);
-    zapsrc.Play();
+    //zapsrc.Play();
+    zapsrc.Pause();
 
     AudioClip labdroneclip = AudioClip();
     if (labdroneclip.LoadFromUCSOUNDFile("labdrone2.ucsound")) std::cout << "loaded sound \"/labdrone2.ucsound\"." << std::endl;
@@ -405,10 +406,10 @@ int main()
     labdronesrc.SetLooping(true);
     labdronesrc.SetSourceFloat(AL_REFERENCE_DISTANCE, 0);
     labdronesrc.SetSourceFloat(AL_MAX_DISTANCE, 16);
-    labdronesrc.SetSourceFloat(AL_GAIN, 0.4f);
+    labdronesrc.SetSourceFloat(AL_GAIN, 1.0f);
 
     labdronesrc.SetCurrentClip(&labdroneclip);
-    labdronesrc.Play();
+    //labdronesrc.Play();
 
 
 
@@ -419,10 +420,24 @@ int main()
     labdronesrcpitch150.SetSourceFloat(AL_REFERENCE_DISTANCE, 0);
     labdronesrcpitch150.SetSourceFloat(AL_MAX_DISTANCE, 16);
     labdronesrcpitch150.SetSourceFloat(AL_PITCH, 1.5f);
-    labdronesrcpitch150.SetSourceFloat(AL_GAIN, 0.4f);
+    labdronesrcpitch150.SetSourceFloat(AL_GAIN, 1.0f);
 
     labdronesrcpitch150.SetCurrentClip(&labdroneclip);
-    labdronesrcpitch150.Play();
+
+
+    AudioClip steamburstclip = AudioClip();
+    steamburstclip.LoadFromUCSOUNDFile("sfx/steamburst.ucsound");
+
+    AudioSource steamburstsrc = AudioSource();
+    steamburstsrc.SetParent(&zapsrc, false);
+
+    steamburstsrc.SetSourceFloat(AL_REFERENCE_DISTANCE, 0);
+    steamburstsrc.SetSourceFloat(AL_MAX_DISTANCE, 16);
+    steamburstsrc.SetSourceFloat(AL_GAIN, 0.3f);
+
+    steamburstsrc.SetCurrentClip(&steamburstclip);
+
+    //labdronesrcpitch150.Play();
 
     //source.SetMaxDistance(2);
     //source.SetMinGain(0);
@@ -441,12 +456,99 @@ int main()
     AudioListener listener = AudioListener();
     listener.SetParent(&cam, false);
 
-    inittestents();
+    //inittestents();
 
     AudioClip button8sfx = AudioClip();
     if (button8sfx.LoadFromUCSOUNDFile("sfx/button/8.ucsound")) std::cout << "loaded \"sfx/button/8.ucsound\"" << std::endl;
+    AudioClip button10sfx = AudioClip();
+    if (button10sfx.LoadFromUCSOUNDFile("sfx/button/10.ucsound")) std::cout << "loaded \"sfx/button/10.ucsound\"" << std::endl;
 
-    HL1ToggleButton btn = HL1ToggleButton(Transform({0, 0, -2}, glm::quat(glm::radians(glm::vec3(0, 180, 0)))), &button8sfx);
+    AudioClip button3sfx = AudioClip();
+    if (button3sfx.LoadFromUCSOUNDFile("sfx/button/3.ucsound")) std::cout << "loaded \"sfx/button/3.ucsound\"" << std::endl;
+    AudioClip button2sfx = AudioClip();
+    if (button2sfx.LoadFromUCSOUNDFile("sfx/button/2.ucsound")) std::cout << "loaded \"sfx/button/2.ucsound\"" << std::endl;
+
+
+    Texture btn4_off = Texture();
+    if (btn4_off.LoadFromUCTEXFile("textures/button/4_off.uctex"))
+    {
+        std::cout << "loaded \"textures/button/4_off.uctex\"" << std::endl;
+        btn4_off.SetDefaultParametres();
+        btn4_off.SetLinearSmoothing();
+    }
+
+    Texture btn4_on = Texture();
+    if (btn4_on.LoadFromUCTEXFile("textures/button/4_on.uctex"))
+    {
+        std::cout << "loaded \"textures/button/4_on.uctex\"" << std::endl;
+        btn4_on.SetDefaultParametres();
+        btn4_on.SetLinearSmoothing();
+    }
+
+    Texture btn3_off = Texture();
+    if (btn3_off.LoadFromUCTEXFile("textures/button/3_off.uctex"))
+    {
+        std::cout << "loaded \"textures/button/3_off.uctex\"" << std::endl;
+        btn3_off.SetDefaultParametres();
+        btn3_off.SetLinearSmoothing();
+    }
+
+    Texture btn3_on = Texture();
+    if (btn3_on.LoadFromUCTEXFile("textures/button/3_on.uctex"))
+    {
+        std::cout << "loaded \"textures/button/3_on.uctex\"" << std::endl;
+        btn3_on.SetDefaultParametres();
+        btn3_on.SetLinearSmoothing();
+    }
+
+    Mesh rect_button = Mesh();
+    if (rect_button.LoadFromUCMESHFile("models/buttons/4.ucmesh")) std::cout << "loaded \"/models/buttons/4.ucmesh\"" << std::endl;
+
+    Mesh square_button = Mesh();
+    if (square_button.LoadFromUCMESHFile("models/buttons/3.ucmesh")) std::cout << "loaded \"/models/buttons/3.ucmesh\"" << std::endl;
+
+    HL1ToggleButtonSettings setts;
+
+    setts.mesh = &rect_button;
+    setts.interaction_sfx = &button8sfx;
+    setts.locked_sfx = &button10sfx;
+    setts.on_texture = &btn4_on;
+    setts.off_texture = &btn4_off;
+    HL1ToggleButton btn = HL1ToggleButton(Transform({0, 0, -2}, glm::quat(glm::radians(glm::vec3(0, 180, 0)))), setts);
+    //btn.locked = true;
+
+    setts.mesh = &square_button;
+    setts.interaction_sfx = &button3sfx;
+    setts.locked_sfx = &button2sfx;
+    setts.on_texture = &btn3_on;
+    setts.off_texture = &btn3_off;
+    HL1ToggleButton btn2 = HL1ToggleButton(Transform({1.5, 0, -2}, glm::quat(glm::radians(glm::vec3(0, 180, 0)))), setts);
+
+    btn2.SetInteractionCooldown(0.5);
+
+    float ams_run_progress = 0;
+    float ams_run_step_per_second = 0;
+    const float AMS_RUN_ANIM_TIME = 10;
+
+    btn.OnClickCallback = [&ams_run_step_per_second, AMS_RUN_ANIM_TIME](HL1ToggleButton *button)
+    {
+        if (button->IsEnabled()) ams_run_step_per_second = 1 / AMS_RUN_ANIM_TIME;
+        else ams_run_step_per_second = -1 / AMS_RUN_ANIM_TIME;
+    };
+
+    btn2.OnClickCallback = [&labdronesrc, &labdronesrcpitch150](HL1ToggleButton *button)
+    {
+        if (button->IsEnabled())
+        {
+            labdronesrc.Play();
+            labdronesrcpitch150.Play();
+        }
+        else
+        {
+            labdronesrc.Rewind();
+            labdronesrcpitch150.Rewind();
+        }
+    };
 
     bool lmb_pressed = false;
     float lastX = windowWidth / 2, lastY = windowHeight / 2;
@@ -524,11 +626,50 @@ int main()
             // ===== MAIN =====
 
             btn.Update(delta, &cam.transform);
+            btn2.Update(delta, &cam.transform);
+
+            if (ams_run_step_per_second > 0)
+            {
+                if (ams_run_progress < 1) ams_run_progress += ams_run_step_per_second * delta;
+                else
+                {
+                    ams_run_progress = 1;
+                    ams_run_step_per_second = 0;
+                }
+
+                if ((ams_run_progress >= 4 / AMS_RUN_ANIM_TIME && ams_run_progress < (4 + ams_run_step_per_second) / AMS_RUN_ANIM_TIME) ||\
+                    (ams_run_progress >= 8 / AMS_RUN_ANIM_TIME && ams_run_progress < (8 + ams_run_step_per_second) / AMS_RUN_ANIM_TIME))
+                {
+                    steamburstsrc.Play();
+                }
+            }
+            else if (ams_run_step_per_second < 0)
+            {
+                if (ams_run_progress > 0) ams_run_progress += ams_run_step_per_second * delta;
+                else
+                {
+                    ams_run_progress = 0;
+                    ams_run_step_per_second = 0;
+                }
+
+                //if ((ams_run_progress >= 4 / AMS_RUN_ANIM_TIME && ams_run_progress < (4 - ams_run_step_per_second) / AMS_RUN_ANIM_TIME) ||\
+                //    (ams_run_progress >= 8 / AMS_RUN_ANIM_TIME && ams_run_progress < (8 - ams_run_step_per_second) / AMS_RUN_ANIM_TIME))
+                //{
+                //    steamburstsrc.Play();
+                //}
+            }
+
+            if (ams_run_progress == 0) zapsrc.Pause();
+            else if (zapsrc.GetState() != PLAYING) zapsrc.Play();
+            else zapsrc.SetSourceFloat(AL_PITCH, ams_run_progress);
+
+            btn2.locked = ams_run_progress != 1;
+            btn.locked = (ams_run_progress != 0 && ams_run_progress != 1) || btn2.IsEnabled();
             
             glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-            e.transform.Rotate(glm::vec3(0, glm::radians(360.0f) * delta, 0));
+            e.transform.Rotate(glm::vec3(glm::radians(90.0f) * delta * (btn2.IsEnabled() ? 1 : 0), ams_run_progress * glm::radians(360.0f * 2) * delta, glm::radians(45.0f) * delta * (btn2.IsEnabled() ? 1 : 0)));
 
             //tr_crowbar_cyl->Rotate(glm::vec3(glm::radians(360.0f) * delta, 0, 0));
 
@@ -613,6 +754,7 @@ int main()
             relsys_e_child.Render(&sp, &view, &proj, &cam.transform, &fogs);
 
             btn.Render(&sp, &view, &proj, &cam.transform, &fogs);
+            btn2.Render(&sp, &view, &proj, &cam.transform, &fogs);
 
             //ground.Render(&sp, &view, &proj);
             //prop.Render(&sp, &view, &proj);

@@ -423,6 +423,12 @@ class Texture
         SetTextureIntParameter(GL_TEXTURE_WRAP_S, GL_REPEAT);
         SetTextureIntParameter(GL_TEXTURE_WRAP_T, GL_REPEAT);
     }
+
+    void SetLinearSmoothing()
+    {
+        SetTextureIntParameter(GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        SetTextureIntParameter(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    }
 };
 
 enum
