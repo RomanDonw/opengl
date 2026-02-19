@@ -764,11 +764,13 @@ int main()
         }
         glfwPollEvents();
     }
-
-    std::cout << "successful quit" << std::endl;
     
+    alcDestroyContext(alctx);
     alcCloseDevice(aldev);
     glfwTerminate();
+
+    std::cout << "successful quit" << std::endl;
+
     return 0;
 }
 
