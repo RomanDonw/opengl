@@ -133,6 +133,7 @@ int main()
 
     int ret = initOpenGL(&window);
     if (ret != 0) return ret;
+    int exitcode = 0;
 
     /*glfwWindowHint(GLFW_TRANSPARENT_FRAMEBUFFER, GLFW_TRUE);
     glfwSetWindowOpacity(window, 0.5);*/
@@ -167,611 +168,634 @@ int main()
     alcMakeContextCurrent(alctx);
 
     alDistanceModel(AL_LINEAR_DISTANCE);
+
+    if (alcIsExtensionPresent(aldev, "ALC_EXT_EFX") == AL_FALSE)
+    {
+        std::cout << "OpenAL EFX extension doesn't exist." << std::endl;
+        exitcode = 1;
+        goto quit;
+    }
+
+    if (!initEFX())
+    {
+        std::cout << "Failed to initialize OpenAL EFX extension." << std::endl;
+        exitcode = 1;
+        goto quit;
+    }
+
+    // ========================================
+    // ========================================
+    // ========================================
     
-    //ShaderProgram sp(vertexShaderSource, fragmentShaderSource);
-    ShaderProgram sp;
-    
-    sp.LoadVertexShader(vertexShaderSource);
-    sp.LoadFragmentShader(fragmentShaderSource);
-
-    std::string log;
-    if (!sp.CompileVertexShader(&log)) std::cout << "Compiling vertex shader error: \"" << log << "\"." << std::endl;
-    if (!sp.CompileFragmentShader(&log)) std::cout << "Compiling fragment shader error: \"" << log << "\"." << std::endl;
-    if (!sp.LinkShaderProgram(&log)) std::cout << "Linking shader program error: \"" << log << "\"." << std::endl;
-
-    Camera cam = Camera();
-
-    // ===== MESHES =====
-    
-    Mesh tri = Mesh();
-    tri.LockBuffers();
-    
-    tri.AddVertexWithUV(-0.5, -0.5, 0.0, 0.0, 0.0);
-    tri.AddVertexWithUV(-0.5, 0.5, 0.0, 0.0, 1.0);
-    tri.AddVertexWithUV(0.5, -0.5, 0.0, 1.0, 0.0);
-    tri.AddVertexWithUV(0.5, 0.5, 0.0, 1.0, 1.0);
-    tri.AddTriangle(3, 1, 0);
-    tri.AddTriangle(0, 2, 3);
-
-    tri.GenerateBuffers();
-    tri.UnlockBuffers();
-
-    Mesh cube = Mesh();
-    cube.LockBuffers();
-
-    cube.AddVertexWithUV(-0.5, -0.5, -0.5, 0 / 4.0f, 1 / 2.0f); // 0
-    cube.AddVertexWithUV(0.5, -0.5, -0.5, 1 / 4.0f, 1 / 2.0f); // 1
-    cube.AddVertexWithUV(-0.5, 0.5, -0.5, 0.0f, 0.0f); // 2
-    cube.AddVertexWithUV(-0.5, -0.5, 0.5, 3 / 4.0f, 1 / 2.0f); // 3
-
-    cube.AddVertexWithUV(-0.5, 0.5, 0.5, 3 / 4.0f, 0.0f); // 4
-    cube.AddVertexWithUV(0.5, -0.5, 0.5, 2 / 4.0f, 1 / 2.0f); // 5
-    cube.AddVertexWithUV(0.5, 0.5, -0.5, 1 / 4.0f, 0.0f); // 6
-    cube.AddVertexWithUV(0.5, 0.5, 0.5, 2 / 4.0f, 0.0f); // 7
-
-    cube.AddVertexWithUV(-0.5, -0.5, -0.5, 4 / 4.0f, 1 / 2.0f); // 8 (at 0)
-    cube.AddVertexWithUV(-0.5, 0.5, -0.5, 4 / 4.0f, 0.0f); // 9 (at 2)
-
-    cube.AddVertexWithUV(-0.5, -0.5, 0.5, 0.0f, 2 / 2.0f); // 10 (at 3)
-    cube.AddVertexWithUV(0.5, -0.5, 0.5, 1 / 4.0f, 2 / 2.0f); // 11 (at 5)
-    
-    cube.AddVertexWithUV(-0.5, 0.5, 0.5, 1 / 4.0f, 1 / 2.0f); // 12 (at 4)
-    cube.AddVertexWithUV(0.5, 0.5, 0.5, 2 / 4.0f, 1 / 2.0f); // 13 (at 7)
-    cube.AddVertexWithUV(-0.5, 0.5, -0.5, 1 / 4.0f, 2 / 2.0f); // 14 (at 9)
-    cube.AddVertexWithUV(0.5, 0.5, -0.5, 2 / 4.0f, 2 / 2.0f); // 15 (at 6)
-
-    // Front face.
-    cube.AddTriangle(0, 2, 6);
-    cube.AddTriangle(6, 1, 0);
-
-    // Left face.
-    cube.AddTriangle(4, 9, 8);
-    cube.AddTriangle(8, 3, 4);
-
-    // Right face.
-    cube.AddTriangle(7, 5, 1);
-    cube.AddTriangle(1, 6, 7);
-
-    // Back face.
-    cube.AddTriangle(7, 4, 3);
-    cube.AddTriangle(3, 5, 7);
-
-    // Down face.
-    cube.AddTriangle(0, 1, 11);
-    cube.AddTriangle(11, 10, 0);
-
-    cube.AddTriangle(14, 12, 13);
-    cube.AddTriangle(13, 15, 14);
-
-    cube.GenerateBuffers();
-    cube.UnlockBuffers();
-
-    Mesh crowbar_head = Mesh();
-    if (crowbar_head.LoadFromUCMESHFile("./models/crowbar/head.ucmesh"))
     {
-        std::cout << "Successfully loaded model from \"./models/crowbar/head.ucmesh\" file." << std::endl;
-    }
-
-    Mesh crowbar_cyl = Mesh();
-    if (crowbar_cyl.LoadFromUCMESHFile("./models/crowbar/cyl.ucmesh"))
-    {
-        std::cout << "Successfully loaded model from \"./models/crowbar/cyl.ucmesh\" file." << std::endl;
-    }
-
-    // ===== TEXTURES =====
-
-    Texture tex = Texture();
-    if (tex.LoadFromUCTEXFile("tex.uctex"))
-    {
-        std::cout << "Successfully loaded texture!" << std::endl;
-        tex.SetDefaultParametres();
-    }
-
-    Texture tex16 = Texture();
-    if (tex16.LoadFromUCTEXFile("tex16bit.uctex"))
-    {
-        std::cout << "Successfully loaded texture 2!" << std::endl;
-        tex16.SetDefaultParametres();
-    }
-
-    Texture tex16_rgb = Texture();
-    if (tex16_rgb.LoadFromUCTEXFile("tex16bit_rgb.uctex"))
-    {
-        std::cout << "Successfully loaded texture 3!" << std::endl;
-        tex16_rgb.SetDefaultParametres();
-    }
-
-    Texture tex_cube = Texture();
-    if (tex_cube.LoadFromUCTEXFile("cube.uctex"))
-    {
-        std::cout << "Successfully loaded texture \"cube.uctex\"!" << std::endl;
-        tex_cube.SetDefaultParametres();
-    }
-
-    Texture crowbar_head_tex = Texture();
-    if (crowbar_head_tex.LoadFromUCTEXFile("./textures/crowbar/head.uctex"))
-    {
-        std::cout << "Successfully loaded texture \"./textures/crowbar/head.uctex\"!" << std::endl;
-        crowbar_head_tex.SetDefaultParametres();
-
-        crowbar_head_tex.SetTextureIntParameter(GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        crowbar_head_tex.SetTextureIntParameter(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    }
-
-    Texture crowbar_cyl_tex = Texture();
-    if (crowbar_cyl_tex.LoadFromUCTEXFile("./textures/crowbar/cyl.uctex"))
-    {
-        std::cout << "Successfully loaded texture \"./textures/crowbar/cyl.uctex\"!" << std::endl;
-        crowbar_cyl_tex.SetDefaultParametres();
-
-        crowbar_cyl_tex.SetTextureIntParameter(GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        crowbar_cyl_tex.SetTextureIntParameter(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    }
-
-    /*
-       ===== ===== =====
-             MAIN
-       ===== ===== =====
-    */
-
-    Entity e = Entity(Transform({0.0f, 0.0f, -5.0f}));
-    e.surfaces.push_back(Surface(&tex, &tri, NoCulling));
-
-    Entity e2 = Entity();
-    e2.surfaces.push_back(Surface(&tex16, &tri));
-    e2.color = {1.0f, 1.0f, 1.0f, 0.5f};
-
-    Entity e3 = Entity(Transform({0.0f, 0.0f, -10.0f}, glm::quat(glm::vec3(0.0f)), {1.0f, 10.0f, 1.0f}));
-    e3.surfaces.push_back(Surface(&tex16_rgb, &tri));
-
-    Entity e4 = Entity(Transform({0, 0, -13}, glm::quat(glm::vec3(0)), {3.0f, 1.0f, 1.0f}));
-    e4.surfaces.push_back(Surface(&tex_cube, &cube));
-
-    Entity crowbar = Entity(Transform({-10, 0, 0}, glm::quat({0, 0, 0}), {0.1, 0.1, 0.1}));
-    crowbar.surfaces.push_back(Surface(&crowbar_head, &crowbar_head_tex));
-    crowbar.surfaces.push_back(Surface(&crowbar_cyl, &crowbar_cyl_tex));
-
-    //Transform *tr_crowbar_cyl = &crowbar.surfaces[1].transform;
-
-    Entity e_cube_surfrottest = Entity(Transform({5, 4, -4}));
-    e_cube_surfrottest.surfaces.push_back(Surface(Transform({1, 1, 1}), &cube));
-    e_cube_surfrottest.surfaces.push_back(Surface(&cube, &tex_cube));
-
-    //Entity ground = Entity();
-    //ground.surfaces.push_back(Surface(&tex_cube, &cube));
-    //ground.SetScale({5.0f, 1.0f, 5.0f});
-
-    //glm::vec3 scl = ground.GetScale();
-    //AABB ground_coll = AABB({-0.5f * scl.x, -0.5f * scl.y, -0.5f * scl.z}, {0.5f * scl.x, 0.5f * scl.y, 0.5f * scl.z});
-
-    //Entity prop = Entity();
-    //prop.SetPosition({1.0f, 20.0f, 0.0f});
-    //prop.surfaces.push_back(Surface(&tex_cube, &cube));
-
-    //scl = prop.GetScale();
-    //AABB prop_coll = AABB({-0.5f * scl.x, -0.5f * scl.y, -0.5f * scl.z}, {0.5f * scl.x, 0.5f * scl.y, 0.5f * scl.z});
-
-    // ===== ===== MAIN ===== =====
-
-    /*glm::vec3 vel = glm::vec3(0.0f);
-    float mass = 1.0f;
-    float inv_mass;
-    if (mass > 0) inv_mass = 1.0f / mass;
-    else inv_mass = 0;*/
-
-    glm::vec3 v = glm::vec3(1.0f, 0.0f, 0.0f);
-    std::cout << Utils::tostring(Utils::angles(v)) << std::endl;
-
-    FogRenderSettings fogs;
-    fogs.fogEnabled = true;
-    fogs.fogColor = glm::vec3(1.0f, 1.0f, 1.0f);
-    fogs.fogStartDistance = 0;
-    fogs.fogEndDistance = 5;
-
-    AudioClip testclip = AudioClip();
-    if (testclip.LoadFromUCSOUNDFile("test.ucsound")) std::cout << "Successfully loaded sound from \"/test.ucsound\" file!" << std::endl;
-
-    AudioSource source = AudioSource();
-    source.SetParent(&e_cube_surfrottest, false);
-
-    source.SetLooping(true);
-    source.SetSourceFloat(AL_REFERENCE_DISTANCE, 0);
-    source.SetSourceFloat(AL_MAX_DISTANCE, 5);
-
-    source.SetCurrentClip(&testclip);
-    source.Play();
-    //source.transform = Transform();
-
-    AudioClip zapclip = AudioClip();
-    if (zapclip.LoadFromUCSOUNDFile("zapmachine.ucsound")) std::cout << "loaded sound \"/zapmachine.ucsound\"." << std::endl;
-
-    AudioSource zapsrc = AudioSource();
-    zapsrc.SetParent(&e, false);
-    
-    zapsrc.SetLooping(true);
-    zapsrc.SetSourceFloat(AL_REFERENCE_DISTANCE, 0);
-    zapsrc.SetSourceFloat(AL_MAX_DISTANCE, 16);
-    zapsrc.SetSourceFloat(AL_GAIN, 1.0f);
-
-    zapsrc.SetCurrentClip(&zapclip);
-    //zapsrc.Play();
-    zapsrc.Pause();
-
-    AudioClip labdroneclip = AudioClip();
-    if (labdroneclip.LoadFromUCSOUNDFile("labdrone2.ucsound")) std::cout << "loaded sound \"/labdrone2.ucsound\"." << std::endl;
-
-    AudioSource labdronesrc = AudioSource();
-    labdronesrc.SetParent(&e, false);
-    
-    labdronesrc.SetLooping(true);
-    labdronesrc.SetSourceFloat(AL_REFERENCE_DISTANCE, 0);
-    labdronesrc.SetSourceFloat(AL_MAX_DISTANCE, 16);
-    labdronesrc.SetSourceFloat(AL_GAIN, 1.0f);
-
-    labdronesrc.SetCurrentClip(&labdroneclip);
-    //labdronesrc.Play();
-
-
-
-    AudioSource labdronesrcpitch150 = AudioSource();
-    labdronesrcpitch150.SetParent(&labdronesrc, false);
-    
-    labdronesrcpitch150.SetLooping(true);
-    labdronesrcpitch150.SetSourceFloat(AL_REFERENCE_DISTANCE, 0);
-    labdronesrcpitch150.SetSourceFloat(AL_MAX_DISTANCE, 16);
-    labdronesrcpitch150.SetSourceFloat(AL_PITCH, 1.5f);
-    labdronesrcpitch150.SetSourceFloat(AL_GAIN, 1.0f);
-
-    labdronesrcpitch150.SetCurrentClip(&labdroneclip);
-
-
-    AudioClip steamburstclip = AudioClip();
-    steamburstclip.LoadFromUCSOUNDFile("sfx/steamburst.ucsound");
-
-    AudioSource steamburstsrc = AudioSource();
-    steamburstsrc.SetParent(&zapsrc, false);
-
-    steamburstsrc.SetSourceFloat(AL_REFERENCE_DISTANCE, 0);
-    steamburstsrc.SetSourceFloat(AL_MAX_DISTANCE, 16);
-    steamburstsrc.SetSourceFloat(AL_GAIN, 0.3f);
-
-    steamburstsrc.SetCurrentClip(&steamburstclip);
-
-    //labdronesrcpitch150.Play();
-
-    //source.SetMaxDistance(2);
-    //source.SetMinGain(0);
-    //source.SetMaxGain(1);
-
-    Entity relsys_e_parent = Entity(Transform({-3, 0, 5}));
-    relsys_e_parent.surfaces.push_back(Surface(&cube));
-    relsys_e_parent.color = {0, 1, 0, 1};
-
-    Entity relsys_e_child = Entity(Transform());
-    relsys_e_child.SetParent(&relsys_e_parent, false);
-    relsys_e_child.transform.SetPosition({0, 0, 2});
-    relsys_e_child.surfaces.push_back(Surface(&cube));
-    relsys_e_child.color = {1, 0, 1, 1};
-
-    AudioListener listener = AudioListener();
-    listener.SetParent(&cam, false);
-
-    //inittestents();
-
-    AudioClip button8sfx = AudioClip();
-    if (button8sfx.LoadFromUCSOUNDFile("sfx/button/8.ucsound")) std::cout << "loaded \"sfx/button/8.ucsound\"" << std::endl;
-    AudioClip button10sfx = AudioClip();
-    if (button10sfx.LoadFromUCSOUNDFile("sfx/button/10.ucsound")) std::cout << "loaded \"sfx/button/10.ucsound\"" << std::endl;
-
-    AudioClip button3sfx = AudioClip();
-    if (button3sfx.LoadFromUCSOUNDFile("sfx/button/3.ucsound")) std::cout << "loaded \"sfx/button/3.ucsound\"" << std::endl;
-    AudioClip button2sfx = AudioClip();
-    if (button2sfx.LoadFromUCSOUNDFile("sfx/button/2.ucsound")) std::cout << "loaded \"sfx/button/2.ucsound\"" << std::endl;
-
-
-    Texture btn4_off = Texture();
-    if (btn4_off.LoadFromUCTEXFile("textures/button/4_off.uctex"))
-    {
-        std::cout << "loaded \"textures/button/4_off.uctex\"" << std::endl;
-        btn4_off.SetDefaultParametres();
-        btn4_off.SetLinearSmoothing();
-    }
-
-    Texture btn4_on = Texture();
-    if (btn4_on.LoadFromUCTEXFile("textures/button/4_on.uctex"))
-    {
-        std::cout << "loaded \"textures/button/4_on.uctex\"" << std::endl;
-        btn4_on.SetDefaultParametres();
-        btn4_on.SetLinearSmoothing();
-    }
-
-    Texture btn3_off = Texture();
-    if (btn3_off.LoadFromUCTEXFile("textures/button/3_off.uctex"))
-    {
-        std::cout << "loaded \"textures/button/3_off.uctex\"" << std::endl;
-        btn3_off.SetDefaultParametres();
-        btn3_off.SetLinearSmoothing();
-    }
-
-    Texture btn3_on = Texture();
-    if (btn3_on.LoadFromUCTEXFile("textures/button/3_on.uctex"))
-    {
-        std::cout << "loaded \"textures/button/3_on.uctex\"" << std::endl;
-        btn3_on.SetDefaultParametres();
-        btn3_on.SetLinearSmoothing();
-    }
-
-    Mesh rect_button = Mesh();
-    if (rect_button.LoadFromUCMESHFile("models/buttons/4.ucmesh")) std::cout << "loaded \"/models/buttons/4.ucmesh\"" << std::endl;
-
-    Mesh square_button = Mesh();
-    if (square_button.LoadFromUCMESHFile("models/buttons/3.ucmesh")) std::cout << "loaded \"/models/buttons/3.ucmesh\"" << std::endl;
-
-    HL1ToggleButtonSettings setts;
-
-    setts.mesh = &rect_button;
-    setts.interaction_sfx = &button8sfx;
-    setts.locked_sfx = &button10sfx;
-    setts.on_texture = &btn4_on;
-    setts.off_texture = &btn4_off;
-    HL1ToggleButton btn = HL1ToggleButton(Transform({0, 0, -2}, glm::quat(glm::radians(glm::vec3(0, 180, 0)))), setts);
-    //btn.locked = true;
-
-    setts.mesh = &square_button;
-    setts.interaction_sfx = &button3sfx;
-    setts.locked_sfx = &button2sfx;
-    setts.on_texture = &btn3_on;
-    setts.off_texture = &btn3_off;
-    HL1ToggleButton btn2 = HL1ToggleButton(Transform({1.5, 0, -2}, glm::quat(glm::radians(glm::vec3(0, 180, 0)))), setts);
-
-    btn2.SetInteractionCooldown(0.5);
-
-    float ams_run_progress = 0;
-    float ams_run_step_per_second = 0;
-    const float AMS_RUN_ANIM_TIME = 10;
-
-    btn.OnClickCallback = [&ams_run_step_per_second, AMS_RUN_ANIM_TIME](HL1ToggleButton *button)
-    {
-        if (button->IsEnabled()) ams_run_step_per_second = 1 / AMS_RUN_ANIM_TIME;
-        else ams_run_step_per_second = -1 / AMS_RUN_ANIM_TIME;
-    };
-
-    btn2.OnClickCallback = [&labdronesrc, &labdronesrcpitch150](HL1ToggleButton *button)
-    {
-        if (button->IsEnabled())
+        //ShaderProgram sp(vertexShaderSource, fragmentShaderSource);
+        ShaderProgram sp;
+        
+        sp.LoadVertexShader(vertexShaderSource);
+        sp.LoadFragmentShader(fragmentShaderSource);
+
+        std::string log;
+        if (!sp.CompileVertexShader(&log)) std::cout << "Compiling vertex shader error: \"" << log << "\"." << std::endl;
+        if (!sp.CompileFragmentShader(&log)) std::cout << "Compiling fragment shader error: \"" << log << "\"." << std::endl;
+        if (!sp.LinkShaderProgram(&log)) std::cout << "Linking shader program error: \"" << log << "\"." << std::endl;
+
+        Camera cam = Camera();
+
+        // ===== MESHES =====
+        
+        Mesh tri = Mesh();
+        tri.LockBuffers();
+        
+        tri.AddVertexWithUV(-0.5, -0.5, 0.0, 0.0, 0.0);
+        tri.AddVertexWithUV(-0.5, 0.5, 0.0, 0.0, 1.0);
+        tri.AddVertexWithUV(0.5, -0.5, 0.0, 1.0, 0.0);
+        tri.AddVertexWithUV(0.5, 0.5, 0.0, 1.0, 1.0);
+        tri.AddTriangle(3, 1, 0);
+        tri.AddTriangle(0, 2, 3);
+
+        tri.GenerateBuffers();
+        tri.UnlockBuffers();
+
+        Mesh cube = Mesh();
+        cube.LockBuffers();
+
+        cube.AddVertexWithUV(-0.5, -0.5, -0.5, 0 / 4.0f, 1 / 2.0f); // 0
+        cube.AddVertexWithUV(0.5, -0.5, -0.5, 1 / 4.0f, 1 / 2.0f); // 1
+        cube.AddVertexWithUV(-0.5, 0.5, -0.5, 0.0f, 0.0f); // 2
+        cube.AddVertexWithUV(-0.5, -0.5, 0.5, 3 / 4.0f, 1 / 2.0f); // 3
+
+        cube.AddVertexWithUV(-0.5, 0.5, 0.5, 3 / 4.0f, 0.0f); // 4
+        cube.AddVertexWithUV(0.5, -0.5, 0.5, 2 / 4.0f, 1 / 2.0f); // 5
+        cube.AddVertexWithUV(0.5, 0.5, -0.5, 1 / 4.0f, 0.0f); // 6
+        cube.AddVertexWithUV(0.5, 0.5, 0.5, 2 / 4.0f, 0.0f); // 7
+
+        cube.AddVertexWithUV(-0.5, -0.5, -0.5, 4 / 4.0f, 1 / 2.0f); // 8 (at 0)
+        cube.AddVertexWithUV(-0.5, 0.5, -0.5, 4 / 4.0f, 0.0f); // 9 (at 2)
+
+        cube.AddVertexWithUV(-0.5, -0.5, 0.5, 0.0f, 2 / 2.0f); // 10 (at 3)
+        cube.AddVertexWithUV(0.5, -0.5, 0.5, 1 / 4.0f, 2 / 2.0f); // 11 (at 5)
+        
+        cube.AddVertexWithUV(-0.5, 0.5, 0.5, 1 / 4.0f, 1 / 2.0f); // 12 (at 4)
+        cube.AddVertexWithUV(0.5, 0.5, 0.5, 2 / 4.0f, 1 / 2.0f); // 13 (at 7)
+        cube.AddVertexWithUV(-0.5, 0.5, -0.5, 1 / 4.0f, 2 / 2.0f); // 14 (at 9)
+        cube.AddVertexWithUV(0.5, 0.5, -0.5, 2 / 4.0f, 2 / 2.0f); // 15 (at 6)
+
+        // Front face.
+        cube.AddTriangle(0, 2, 6);
+        cube.AddTriangle(6, 1, 0);
+
+        // Left face.
+        cube.AddTriangle(4, 9, 8);
+        cube.AddTriangle(8, 3, 4);
+
+        // Right face.
+        cube.AddTriangle(7, 5, 1);
+        cube.AddTriangle(1, 6, 7);
+
+        // Back face.
+        cube.AddTriangle(7, 4, 3);
+        cube.AddTriangle(3, 5, 7);
+
+        // Down face.
+        cube.AddTriangle(0, 1, 11);
+        cube.AddTriangle(11, 10, 0);
+
+        cube.AddTriangle(14, 12, 13);
+        cube.AddTriangle(13, 15, 14);
+
+        cube.GenerateBuffers();
+        cube.UnlockBuffers();
+
+        Mesh crowbar_head = Mesh();
+        if (crowbar_head.LoadFromUCMESHFile("./models/crowbar/head.ucmesh"))
         {
-            labdronesrc.Play();
-            labdronesrcpitch150.Play();
+            std::cout << "Successfully loaded model from \"./models/crowbar/head.ucmesh\" file." << std::endl;
         }
-        else
+
+        Mesh crowbar_cyl = Mesh();
+        if (crowbar_cyl.LoadFromUCMESHFile("./models/crowbar/cyl.ucmesh"))
         {
-            labdronesrc.Rewind();
-            labdronesrcpitch150.Rewind();
+            std::cout << "Successfully loaded model from \"./models/crowbar/cyl.ucmesh\" file." << std::endl;
         }
-    };
 
-    bool lmb_pressed = false;
-    float lastX = windowWidth / 2, lastY = windowHeight / 2;
-    glfwSetCursorPos(window, lastX, lastY);
-    glfwSetTime(0);
-    double prev_time = glfwGetTime();
-    while (!glfwWindowShouldClose(window))
-    {
-        double delta = glfwGetTime() - prev_time;
-        if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) glfwSetWindowShouldClose(window, true);
-        if (delta >= 1.0f / FPS)
+        // ===== TEXTURES =====
+
+        Texture tex = Texture();
+        if (tex.LoadFromUCTEXFile("tex.uctex"))
         {
-            prev_time = glfwGetTime();
+            std::cout << "Successfully loaded texture!" << std::endl;
+            tex.SetDefaultParametres();
+        }
 
-            /*if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-            if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);*/
+        Texture tex16 = Texture();
+        if (tex16.LoadFromUCTEXFile("tex16bit.uctex"))
+        {
+            std::cout << "Successfully loaded texture 2!" << std::endl;
+            tex16.SetDefaultParametres();
+        }
 
-            /*if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS && !lmb_pressed)
+        Texture tex16_rgb = Texture();
+        if (tex16_rgb.LoadFromUCTEXFile("tex16bit_rgb.uctex"))
+        {
+            std::cout << "Successfully loaded texture 3!" << std::endl;
+            tex16_rgb.SetDefaultParametres();
+        }
+
+        Texture tex_cube = Texture();
+        if (tex_cube.LoadFromUCTEXFile("cube.uctex"))
+        {
+            std::cout << "Successfully loaded texture \"cube.uctex\"!" << std::endl;
+            tex_cube.SetDefaultParametres();
+        }
+
+        Texture crowbar_head_tex = Texture();
+        if (crowbar_head_tex.LoadFromUCTEXFile("./textures/crowbar/head.uctex"))
+        {
+            std::cout << "Successfully loaded texture \"./textures/crowbar/head.uctex\"!" << std::endl;
+            crowbar_head_tex.SetDefaultParametres();
+
+            crowbar_head_tex.SetTextureIntParameter(GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            crowbar_head_tex.SetTextureIntParameter(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        }
+
+        Texture crowbar_cyl_tex = Texture();
+        if (crowbar_cyl_tex.LoadFromUCTEXFile("./textures/crowbar/cyl.uctex"))
+        {
+            std::cout << "Successfully loaded texture \"./textures/crowbar/cyl.uctex\"!" << std::endl;
+            crowbar_cyl_tex.SetDefaultParametres();
+
+            crowbar_cyl_tex.SetTextureIntParameter(GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            crowbar_cyl_tex.SetTextureIntParameter(GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        }
+
+        /*
+        ===== ===== =====
+                MAIN
+        ===== ===== =====
+        */
+
+        Entity e = Entity(Transform({0.0f, 0.0f, -5.0f}));
+        e.surfaces.push_back(Surface(&tex, &tri, NoCulling));
+
+        Entity e2 = Entity();
+        e2.surfaces.push_back(Surface(&tex16, &tri));
+        e2.color = {1.0f, 1.0f, 1.0f, 0.5f};
+
+        Entity e3 = Entity(Transform({0.0f, 0.0f, -10.0f}, glm::quat(glm::vec3(0.0f)), {1.0f, 10.0f, 1.0f}));
+        e3.surfaces.push_back(Surface(&tex16_rgb, &tri));
+
+        Entity e4 = Entity(Transform({0, 0, -13}, glm::quat(glm::vec3(0)), {3.0f, 1.0f, 1.0f}));
+        e4.surfaces.push_back(Surface(&tex_cube, &cube));
+
+        Entity crowbar = Entity(Transform({-10, 0, 0}, glm::quat({0, 0, 0}), {0.1, 0.1, 0.1}));
+        crowbar.surfaces.push_back(Surface(&crowbar_head, &crowbar_head_tex));
+        crowbar.surfaces.push_back(Surface(&crowbar_cyl, &crowbar_cyl_tex));
+
+        //Transform *tr_crowbar_cyl = &crowbar.surfaces[1].transform;
+
+        Entity e_cube_surfrottest = Entity(Transform({5, 4, -4}));
+        e_cube_surfrottest.surfaces.push_back(Surface(Transform({1, 1, 1}), &cube));
+        e_cube_surfrottest.surfaces.push_back(Surface(&cube, &tex_cube));
+
+        //Entity ground = Entity();
+        //ground.surfaces.push_back(Surface(&tex_cube, &cube));
+        //ground.SetScale({5.0f, 1.0f, 5.0f});
+
+        //glm::vec3 scl = ground.GetScale();
+        //AABB ground_coll = AABB({-0.5f * scl.x, -0.5f * scl.y, -0.5f * scl.z}, {0.5f * scl.x, 0.5f * scl.y, 0.5f * scl.z});
+
+        //Entity prop = Entity();
+        //prop.SetPosition({1.0f, 20.0f, 0.0f});
+        //prop.surfaces.push_back(Surface(&tex_cube, &cube));
+
+        //scl = prop.GetScale();
+        //AABB prop_coll = AABB({-0.5f * scl.x, -0.5f * scl.y, -0.5f * scl.z}, {0.5f * scl.x, 0.5f * scl.y, 0.5f * scl.z});
+
+        // ===== ===== MAIN ===== =====
+
+        /*glm::vec3 vel = glm::vec3(0.0f);
+        float mass = 1.0f;
+        float inv_mass;
+        if (mass > 0) inv_mass = 1.0f / mass;
+        else inv_mass = 0;*/
+
+        glm::vec3 v = glm::vec3(1.0f, 0.0f, 0.0f);
+        std::cout << Utils::tostring(Utils::angles(v)) << std::endl;
+
+        FogRenderSettings fogs;
+        fogs.fogEnabled = true;
+        fogs.fogColor = glm::vec3(1.0f, 1.0f, 1.0f);
+        fogs.fogStartDistance = 0;
+        fogs.fogEndDistance = 5;
+
+        AudioClip testclip = AudioClip();
+        if (testclip.LoadFromUCSOUNDFile("test.ucsound")) std::cout << "Successfully loaded sound from \"/test.ucsound\" file!" << std::endl;
+
+        AudioSource source = AudioSource();
+        source.SetParent(&e_cube_surfrottest, false);
+
+        source.SetLooping(true);
+        source.SetSourceFloat(AL_REFERENCE_DISTANCE, 0);
+        source.SetSourceFloat(AL_MAX_DISTANCE, 5);
+
+        source.SetCurrentClip(&testclip);
+        source.Play();
+        //source.transform = Transform();
+
+        AudioClip zapclip = AudioClip();
+        if (zapclip.LoadFromUCSOUNDFile("zapmachine.ucsound")) std::cout << "loaded sound \"/zapmachine.ucsound\"." << std::endl;
+
+        AudioSource zapsrc = AudioSource();
+        zapsrc.SetParent(&e, false);
+        
+        zapsrc.SetLooping(true);
+        zapsrc.SetSourceFloat(AL_REFERENCE_DISTANCE, 0);
+        zapsrc.SetSourceFloat(AL_MAX_DISTANCE, 16);
+        zapsrc.SetSourceFloat(AL_GAIN, 1.0f);
+
+        zapsrc.SetCurrentClip(&zapclip);
+        //zapsrc.Play();
+        zapsrc.Pause();
+
+        AudioClip labdroneclip = AudioClip();
+        if (labdroneclip.LoadFromUCSOUNDFile("labdrone2.ucsound")) std::cout << "loaded sound \"/labdrone2.ucsound\"." << std::endl;
+
+        AudioSource labdronesrc = AudioSource();
+        labdronesrc.SetParent(&e, false);
+        
+        labdronesrc.SetLooping(true);
+        labdronesrc.SetSourceFloat(AL_REFERENCE_DISTANCE, 0);
+        labdronesrc.SetSourceFloat(AL_MAX_DISTANCE, 16);
+        labdronesrc.SetSourceFloat(AL_GAIN, 1.0f);
+
+        labdronesrc.SetCurrentClip(&labdroneclip);
+        //labdronesrc.Play();
+
+
+
+        AudioSource labdronesrcpitch150 = AudioSource();
+        labdronesrcpitch150.SetParent(&labdronesrc, false);
+        
+        labdronesrcpitch150.SetLooping(true);
+        labdronesrcpitch150.SetSourceFloat(AL_REFERENCE_DISTANCE, 0);
+        labdronesrcpitch150.SetSourceFloat(AL_MAX_DISTANCE, 16);
+        labdronesrcpitch150.SetSourceFloat(AL_PITCH, 1.5f);
+        labdronesrcpitch150.SetSourceFloat(AL_GAIN, 1.0f);
+
+        labdronesrcpitch150.SetCurrentClip(&labdroneclip);
+
+
+        AudioClip steamburstclip = AudioClip();
+        steamburstclip.LoadFromUCSOUNDFile("sfx/steamburst.ucsound");
+
+        AudioSource steamburstsrc = AudioSource();
+        steamburstsrc.SetParent(&zapsrc, false);
+
+        steamburstsrc.SetSourceFloat(AL_REFERENCE_DISTANCE, 0);
+        steamburstsrc.SetSourceFloat(AL_MAX_DISTANCE, 16);
+        steamburstsrc.SetSourceFloat(AL_GAIN, 0.3f);
+
+        steamburstsrc.SetCurrentClip(&steamburstclip);
+
+        //labdronesrcpitch150.Play();
+
+        //source.SetMaxDistance(2);
+        //source.SetMinGain(0);
+        //source.SetMaxGain(1);
+
+        Entity relsys_e_parent = Entity(Transform({-3, 0, 5}));
+        relsys_e_parent.surfaces.push_back(Surface(&cube));
+        relsys_e_parent.color = {0, 1, 0, 1};
+
+        Entity relsys_e_child = Entity(Transform());
+        relsys_e_child.SetParent(&relsys_e_parent, false);
+        relsys_e_child.transform.SetPosition({0, 0, 2});
+        relsys_e_child.surfaces.push_back(Surface(&cube));
+        relsys_e_child.color = {1, 0, 1, 1};
+
+        AudioListener listener = AudioListener();
+        listener.SetParent(&cam, false);
+
+        //inittestents();
+
+        AudioClip button8sfx = AudioClip();
+        if (button8sfx.LoadFromUCSOUNDFile("sfx/button/8.ucsound")) std::cout << "loaded \"sfx/button/8.ucsound\"" << std::endl;
+        AudioClip button10sfx = AudioClip();
+        if (button10sfx.LoadFromUCSOUNDFile("sfx/button/10.ucsound")) std::cout << "loaded \"sfx/button/10.ucsound\"" << std::endl;
+
+        AudioClip button3sfx = AudioClip();
+        if (button3sfx.LoadFromUCSOUNDFile("sfx/button/3.ucsound")) std::cout << "loaded \"sfx/button/3.ucsound\"" << std::endl;
+        AudioClip button2sfx = AudioClip();
+        if (button2sfx.LoadFromUCSOUNDFile("sfx/button/2.ucsound")) std::cout << "loaded \"sfx/button/2.ucsound\"" << std::endl;
+
+
+        Texture btn4_off = Texture();
+        if (btn4_off.LoadFromUCTEXFile("textures/button/4_off.uctex"))
+        {
+            std::cout << "loaded \"textures/button/4_off.uctex\"" << std::endl;
+            btn4_off.SetDefaultParametres();
+            btn4_off.SetLinearSmoothing();
+        }
+
+        Texture btn4_on = Texture();
+        if (btn4_on.LoadFromUCTEXFile("textures/button/4_on.uctex"))
+        {
+            std::cout << "loaded \"textures/button/4_on.uctex\"" << std::endl;
+            btn4_on.SetDefaultParametres();
+            btn4_on.SetLinearSmoothing();
+        }
+
+        Texture btn3_off = Texture();
+        if (btn3_off.LoadFromUCTEXFile("textures/button/3_off.uctex"))
+        {
+            std::cout << "loaded \"textures/button/3_off.uctex\"" << std::endl;
+            btn3_off.SetDefaultParametres();
+            btn3_off.SetLinearSmoothing();
+        }
+
+        Texture btn3_on = Texture();
+        if (btn3_on.LoadFromUCTEXFile("textures/button/3_on.uctex"))
+        {
+            std::cout << "loaded \"textures/button/3_on.uctex\"" << std::endl;
+            btn3_on.SetDefaultParametres();
+            btn3_on.SetLinearSmoothing();
+        }
+
+        Mesh rect_button = Mesh();
+        if (rect_button.LoadFromUCMESHFile("models/buttons/4.ucmesh")) std::cout << "loaded \"/models/buttons/4.ucmesh\"" << std::endl;
+
+        Mesh square_button = Mesh();
+        if (square_button.LoadFromUCMESHFile("models/buttons/3.ucmesh")) std::cout << "loaded \"/models/buttons/3.ucmesh\"" << std::endl;
+
+        HL1ToggleButtonSettings setts;
+
+        setts.mesh = &rect_button;
+        setts.interaction_sfx = &button8sfx;
+        setts.locked_sfx = &button10sfx;
+        setts.on_texture = &btn4_on;
+        setts.off_texture = &btn4_off;
+        HL1ToggleButton btn = HL1ToggleButton(Transform({0, 0, -2}, glm::quat(glm::radians(glm::vec3(0, 180, 0)))), setts);
+        //btn.locked = true;
+
+        setts.mesh = &square_button;
+        setts.interaction_sfx = &button3sfx;
+        setts.locked_sfx = &button2sfx;
+        setts.on_texture = &btn3_on;
+        setts.off_texture = &btn3_off;
+        HL1ToggleButton btn2 = HL1ToggleButton(Transform({1.5, 0, -2}, glm::quat(glm::radians(glm::vec3(0, 180, 0)))), setts);
+
+        btn2.SetInteractionCooldown(0.5);
+
+        float ams_run_progress = 0;
+        float ams_run_step_per_second = 0;
+        const float AMS_RUN_ANIM_TIME = 10;
+
+        btn.OnClickCallback = [&ams_run_step_per_second, AMS_RUN_ANIM_TIME](HL1ToggleButton *button)
+        {
+            if (button->IsEnabled()) ams_run_step_per_second = 1 / AMS_RUN_ANIM_TIME;
+            else ams_run_step_per_second = -1 / AMS_RUN_ANIM_TIME;
+        };
+
+        btn2.OnClickCallback = [&labdronesrc, &labdronesrcpitch150](HL1ToggleButton *button)
+        {
+            if (button->IsEnabled())
             {
-                lmb_pressed = true;
-                std::cout << "clicked" << std::endl;
-
-                glfwSetCursorPos(window, lastX, lastY);
-
-                if (glfwGetInputMode(window, GLFW_CURSOR) == GLFW_CURSOR_NORMAL)
-                {
-                    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-                }
-                else glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+                labdronesrc.Play();
+                labdronesrcpitch150.Play();
             }
-            else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_RELEASE && lmb_pressed) lmb_pressed = false;*/
-
-            // ===== CONTROLS =====
-            if (glfwGetInputMode(window, GLFW_CURSOR) != GLFW_CURSOR_NORMAL)
+            else
             {
-                float speed;
-                if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) speed = cameraSpeed * 2.0;
-                else if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) speed = cameraSpeed / 2.0;
-                else speed = cameraSpeed;
-
-                Transform *t = &cam.transform;
-
-                if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) t->Translate(t->GetFront() * glm::vec3(speed * delta));
-                if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) t->Translate(-t->GetFront() * glm::vec3(speed * delta));
-                if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) t->Translate(-t->GetRight() * glm::vec3(speed * delta));
-                if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) t->Translate(t->GetRight() * glm::vec3(speed * delta));
-
-                if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) t->Translate(glm::vec3(0, speed * delta, 0));
-                if (glfwGetKey(window, GLFW_KEY_LEFT_ALT) == GLFW_PRESS) t->Translate(glm::vec3(0, -speed * delta, 0));
-
-                if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE) == GLFW_PRESS) cameraSpeed = DEFAULT_CAMERA_SPEED;
-
-                double mouseX, mouseY;
-                glfwGetCursorPos(window, &mouseX, &mouseY);
-
-                float mxoff = -glm::radians((mouseX - lastX) * MOUSE_SENSITIVITY);
-                float myoff = -glm::radians((mouseY - lastY) * MOUSE_SENSITIVITY);
-                {
-                    glm::quat delta_pitch = glm::angleAxis(myoff, glm::vec3(1, 0, 0));
-                    glm::quat delta_yaw = glm::angleAxis(mxoff, glm::vec3(0, 1, 0));
-
-                    glm::quat new_rotation = delta_yaw * t->GetRotation() * delta_pitch;
-
-                    glm::vec3 front = new_rotation * glm::vec3(0, 0, -1);
-                    glm::vec3 front_xz = glm::normalize(glm::vec3(front.x, 0, front.z));
-
-                    if (glm::dot(front, front_xz) >= glm::cos(glm::radians(60.0f))) t->SetRotation(new_rotation);
-                    else t->Rotate(delta_yaw);
-                }
-
-                lastX = mouseX;
-                lastY = mouseY;
+                labdronesrc.Rewind();
+                labdronesrcpitch150.Rewind();
             }
+        };
 
-            // ===== MAIN =====
-
-            btn.Update(delta, &cam.transform);
-            btn2.Update(delta, &cam.transform);
-
-            if (ams_run_step_per_second > 0)
+        bool lmb_pressed = false;
+        float lastX = windowWidth / 2, lastY = windowHeight / 2;
+        glfwSetCursorPos(window, lastX, lastY);
+        glfwSetTime(0);
+        double prev_time = glfwGetTime();
+        while (!glfwWindowShouldClose(window))
+        {
+            double delta = glfwGetTime() - prev_time;
+            if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) glfwSetWindowShouldClose(window, true);
+            if (delta >= 1.0f / FPS)
             {
-                if (ams_run_progress < 1) ams_run_progress += ams_run_step_per_second * delta;
-                else
+                prev_time = glfwGetTime();
+
+                /*if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);*/
+
+                /*if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS && !lmb_pressed)
                 {
-                    ams_run_progress = 1;
-                    ams_run_step_per_second = 0;
+                    lmb_pressed = true;
+                    std::cout << "clicked" << std::endl;
+
+                    glfwSetCursorPos(window, lastX, lastY);
+
+                    if (glfwGetInputMode(window, GLFW_CURSOR) == GLFW_CURSOR_NORMAL)
+                    {
+                        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                    }
+                    else glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+                }
+                else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_RELEASE && lmb_pressed) lmb_pressed = false;*/
+
+                // ===== CONTROLS =====
+                if (glfwGetInputMode(window, GLFW_CURSOR) != GLFW_CURSOR_NORMAL)
+                {
+                    float speed;
+                    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) speed = cameraSpeed * 2.0;
+                    else if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) speed = cameraSpeed / 2.0;
+                    else speed = cameraSpeed;
+
+                    Transform *t = &cam.transform;
+
+                    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) t->Translate(t->GetFront() * glm::vec3(speed * delta));
+                    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) t->Translate(-t->GetFront() * glm::vec3(speed * delta));
+                    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) t->Translate(-t->GetRight() * glm::vec3(speed * delta));
+                    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) t->Translate(t->GetRight() * glm::vec3(speed * delta));
+
+                    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) t->Translate(glm::vec3(0, speed * delta, 0));
+                    if (glfwGetKey(window, GLFW_KEY_LEFT_ALT) == GLFW_PRESS) t->Translate(glm::vec3(0, -speed * delta, 0));
+
+                    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_MIDDLE) == GLFW_PRESS) cameraSpeed = DEFAULT_CAMERA_SPEED;
+
+                    double mouseX, mouseY;
+                    glfwGetCursorPos(window, &mouseX, &mouseY);
+
+                    float mxoff = -glm::radians((mouseX - lastX) * MOUSE_SENSITIVITY);
+                    float myoff = -glm::radians((mouseY - lastY) * MOUSE_SENSITIVITY);
+                    {
+                        glm::quat delta_pitch = glm::angleAxis(myoff, glm::vec3(1, 0, 0));
+                        glm::quat delta_yaw = glm::angleAxis(mxoff, glm::vec3(0, 1, 0));
+
+                        glm::quat new_rotation = delta_yaw * t->GetRotation() * delta_pitch;
+
+                        glm::vec3 front = new_rotation * glm::vec3(0, 0, -1);
+                        glm::vec3 front_xz = glm::normalize(glm::vec3(front.x, 0, front.z));
+
+                        if (glm::dot(front, front_xz) >= glm::cos(glm::radians(60.0f))) t->SetRotation(new_rotation);
+                        else t->Rotate(delta_yaw);
+                    }
+
+                    lastX = mouseX;
+                    lastY = mouseY;
                 }
 
-                if ((ams_run_progress >= 4 / AMS_RUN_ANIM_TIME && ams_run_progress < (4 + ams_run_step_per_second) / AMS_RUN_ANIM_TIME) ||\
-                    (ams_run_progress >= 8 / AMS_RUN_ANIM_TIME && ams_run_progress < (8 + ams_run_step_per_second) / AMS_RUN_ANIM_TIME))
+                // ===== MAIN =====
+
+                btn.Update(delta, &cam.transform);
+                btn2.Update(delta, &cam.transform);
+
+                if (ams_run_step_per_second > 0)
                 {
-                    steamburstsrc.Play();
+                    if (ams_run_progress < 1) ams_run_progress += ams_run_step_per_second * delta;
+                    else
+                    {
+                        ams_run_progress = 1;
+                        ams_run_step_per_second = 0;
+                    }
+
+                    if ((ams_run_progress >= 4 / AMS_RUN_ANIM_TIME && ams_run_progress < (4 + ams_run_step_per_second) / AMS_RUN_ANIM_TIME) ||\
+                        (ams_run_progress >= 8 / AMS_RUN_ANIM_TIME && ams_run_progress < (8 + ams_run_step_per_second) / AMS_RUN_ANIM_TIME))
+                    {
+                        steamburstsrc.Play();
+                    }
                 }
-            }
-            else if (ams_run_step_per_second < 0)
-            {
-                if (ams_run_progress > 0) ams_run_progress += ams_run_step_per_second * delta;
-                else
+                else if (ams_run_step_per_second < 0)
                 {
-                    ams_run_progress = 0;
-                    ams_run_step_per_second = 0;
+                    if (ams_run_progress > 0) ams_run_progress += ams_run_step_per_second * delta;
+                    else
+                    {
+                        ams_run_progress = 0;
+                        ams_run_step_per_second = 0;
+                    }
+
+                    //if ((ams_run_progress >= 4 / AMS_RUN_ANIM_TIME && ams_run_progress < (4 - ams_run_step_per_second) / AMS_RUN_ANIM_TIME) ||\
+                    //    (ams_run_progress >= 8 / AMS_RUN_ANIM_TIME && ams_run_progress < (8 - ams_run_step_per_second) / AMS_RUN_ANIM_TIME))
+                    //{
+                    //    steamburstsrc.Play();
+                    //}
                 }
 
-                //if ((ams_run_progress >= 4 / AMS_RUN_ANIM_TIME && ams_run_progress < (4 - ams_run_step_per_second) / AMS_RUN_ANIM_TIME) ||\
-                //    (ams_run_progress >= 8 / AMS_RUN_ANIM_TIME && ams_run_progress < (8 - ams_run_step_per_second) / AMS_RUN_ANIM_TIME))
-                //{
-                //    steamburstsrc.Play();
-                //}
-            }
+                if (ams_run_progress == 0) zapsrc.Pause();
+                else if (zapsrc.GetState() != PLAYING) zapsrc.Play();
+                else zapsrc.SetSourceFloat(AL_PITCH, ams_run_progress);
 
-            if (ams_run_progress == 0) zapsrc.Pause();
-            else if (zapsrc.GetState() != PLAYING) zapsrc.Play();
-            else zapsrc.SetSourceFloat(AL_PITCH, ams_run_progress);
-
-            btn2.locked = ams_run_progress != 1;
-            btn.locked = (ams_run_progress != 0 && ams_run_progress != 1) || btn2.IsEnabled();
-            
-            glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-            e.transform.Rotate(glm::vec3(glm::radians(90.0f) * delta * (btn2.IsEnabled() ? 1 : 0), ams_run_progress * glm::radians(360.0f * 2) * delta, glm::radians(45.0f) * delta * (btn2.IsEnabled() ? 1 : 0)));
-
-            //tr_crowbar_cyl->Rotate(glm::vec3(glm::radians(360.0f) * delta, 0, 0));
-
-            e_cube_surfrottest.surfaces[0].transform.Rotate(glm::vec3(glm::radians(360.0f) * delta, 0, 0));
-            e_cube_surfrottest.transform.Rotate(glm::vec3(0, glm::radians(90.0f) * delta, 0));
-            e_cube_surfrottest.transform.Translate({0, 0, -1 * delta});
-
-            //source.transform.SetPosition(e_cube_surfrottest.transform.GetPosition());
-
-            //std::cout << source.GetGlobalTransform().ToString() << std::endl;
-
-            //e4.SetRotation(e4.GetRotation() + glm::vec3(0, glm::radians(90.0f) * delta, glm::radians(30.0f) * delta));
-
-            relsys_e_parent.transform.Rotate(glm::quat({0, glm::radians(45.0f) * delta, 0}));
-
-            /*prop.SetPosition(prop.GetPosition() + glm::vec3(0.0f, -5.0f * delta, 0.0f));
-
-            AABB currAABB = prop_coll.Copy();
-            currAABB.Translate(prop.GetPosition());
-
-            std::cout << ground_coll.GetAABBPenetration(&currAABB).y << std::endl;
-            if (currAABB.AABBIntersects(ground_coll)) std::cout << "Intersects!" << std::endl;
-
-            prop.SetPosition(prop.GetPosition() + ground_coll.GetAABBPushForce(&currAABB));*/
-
-            /*AABB currAABB = prop_coll.Copy();
-            currAABB.Translate(prop.GetPosition());
-
-            glm::vec3 pen = ground_coll.GetAABBWeightedPenetration(&currAABB);
-            glm::vec3 pennorm = Utils::normalize(pen);
-
-            glm::vec3 force = glm::vec3(0.0f, -9.8f * mass, 0.0f);
-
-            force -= pennorm * force;
-
-            glm::vec3 accel = force / glm::vec3(mass);
-
-            vel += accel * glm::vec3(delta);
-            vel -= pennorm * vel;
-
-            prop.SetPosition(prop.GetPosition() + vel * glm::vec3(delta) + pen - glm::vec3(0.00001f) * pennorm);
-
-            std::cout << "pennorm Y: " << pennorm.y << ", force Y: " << force.y << ", vel Y: " << vel.y << ", pos Y: " << prop.GetPosition().y << std::endl;*/
-
-            //AABB currAABB = prop_coll.Copy();
-            //currAABB.Translate(prop.GetPosition());
-
-            /*glm::vec3 pen = ground_coll.GetAABBPenetration(&currAABB);
-            glm::vec3 pushDir = Utils::normalize(currAABB.GetCenterOffset() - ground_coll.GetAABBOverlapRegion(&currAABB).GetCenterOffset());
-            
-            glm::vec3 force = glm::vec3(0.0f, -9.8f * mass, 0.0f);
-
-            force -= pushDir * pen;
-
-            glm::vec3 accel = force / glm::vec3(mass);
-
-            vel += accel * glm::vec3(delta);
-            //vel -= vel * pushDir * pen;
-
-            prop.SetPosition(prop.GetPosition() + vel * glm::vec3(delta) + pen);*/
-
-            /*if (ground_coll.AABBIntersects(&currAABB))
-            {
-                glm::vec3 relvel = vel;
+                btn2.locked = ams_run_progress != 1;
+                btn.locked = (ams_run_progress != 0 && ams_run_progress != 1) || btn2.IsEnabled();
                 
-            }*/
+                glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-            glm::mat4 view = cam.GetViewMatrix();
-            glm::mat4 proj = cam.GetProjectionMatrix(windowWidth, windowHeight);
+                e.transform.Rotate(glm::vec3(glm::radians(90.0f) * delta * (btn2.IsEnabled() ? 1 : 0), ams_run_progress * glm::radians(360.0f * 2) * delta, glm::radians(45.0f) * delta * (btn2.IsEnabled() ? 1 : 0)));
 
-            e.Render(&sp, &view, &proj, &cam.transform, &fogs);
-            e3.Render(&sp, &view, &proj, &cam.transform, &fogs);
-            e4.Render(&sp, &view, &proj, &cam.transform, &fogs);
+                //tr_crowbar_cyl->Rotate(glm::vec3(glm::radians(360.0f) * delta, 0, 0));
 
-            crowbar.Render(&sp, &view, &proj, &cam.transform, &fogs);
+                e_cube_surfrottest.surfaces[0].transform.Rotate(glm::vec3(glm::radians(360.0f) * delta, 0, 0));
+                e_cube_surfrottest.transform.Rotate(glm::vec3(0, glm::radians(90.0f) * delta, 0));
+                e_cube_surfrottest.transform.Translate({0, 0, -1 * delta});
 
-            e_cube_surfrottest.Render(&sp, &view, &proj, &cam.transform, &fogs);
+                //source.transform.SetPosition(e_cube_surfrottest.transform.GetPosition());
 
-            e2.Render(&sp, &view, &proj, &cam.transform, &fogs);
+                //std::cout << source.GetGlobalTransform().ToString() << std::endl;
 
-            relsys_e_parent.Render(&sp, &view, &proj, &cam.transform, &fogs);
-            relsys_e_child.Render(&sp, &view, &proj, &cam.transform, &fogs);
+                //e4.SetRotation(e4.GetRotation() + glm::vec3(0, glm::radians(90.0f) * delta, glm::radians(30.0f) * delta));
 
-            btn.Render(&sp, &view, &proj, &cam.transform, &fogs);
-            btn2.Render(&sp, &view, &proj, &cam.transform, &fogs);
+                relsys_e_parent.transform.Rotate(glm::quat({0, glm::radians(45.0f) * delta, 0}));
 
-            //ground.Render(&sp, &view, &proj);
-            //prop.Render(&sp, &view, &proj);
-            
-            glfwSwapBuffers(window);
+                /*prop.SetPosition(prop.GetPosition() + glm::vec3(0.0f, -5.0f * delta, 0.0f));
 
+                AABB currAABB = prop_coll.Copy();
+                currAABB.Translate(prop.GetPosition());
+
+                std::cout << ground_coll.GetAABBPenetration(&currAABB).y << std::endl;
+                if (currAABB.AABBIntersects(ground_coll)) std::cout << "Intersects!" << std::endl;
+
+                prop.SetPosition(prop.GetPosition() + ground_coll.GetAABBPushForce(&currAABB));*/
+
+                /*AABB currAABB = prop_coll.Copy();
+                currAABB.Translate(prop.GetPosition());
+
+                glm::vec3 pen = ground_coll.GetAABBWeightedPenetration(&currAABB);
+                glm::vec3 pennorm = Utils::normalize(pen);
+
+                glm::vec3 force = glm::vec3(0.0f, -9.8f * mass, 0.0f);
+
+                force -= pennorm * force;
+
+                glm::vec3 accel = force / glm::vec3(mass);
+
+                vel += accel * glm::vec3(delta);
+                vel -= pennorm * vel;
+
+                prop.SetPosition(prop.GetPosition() + vel * glm::vec3(delta) + pen - glm::vec3(0.00001f) * pennorm);
+
+                std::cout << "pennorm Y: " << pennorm.y << ", force Y: " << force.y << ", vel Y: " << vel.y << ", pos Y: " << prop.GetPosition().y << std::endl;*/
+
+                //AABB currAABB = prop_coll.Copy();
+                //currAABB.Translate(prop.GetPosition());
+
+                /*glm::vec3 pen = ground_coll.GetAABBPenetration(&currAABB);
+                glm::vec3 pushDir = Utils::normalize(currAABB.GetCenterOffset() - ground_coll.GetAABBOverlapRegion(&currAABB).GetCenterOffset());
+                
+                glm::vec3 force = glm::vec3(0.0f, -9.8f * mass, 0.0f);
+
+                force -= pushDir * pen;
+
+                glm::vec3 accel = force / glm::vec3(mass);
+
+                vel += accel * glm::vec3(delta);
+                //vel -= vel * pushDir * pen;
+
+                prop.SetPosition(prop.GetPosition() + vel * glm::vec3(delta) + pen);*/
+
+                /*if (ground_coll.AABBIntersects(&currAABB))
+                {
+                    glm::vec3 relvel = vel;
+                    
+                }*/
+
+                glm::mat4 view = cam.GetViewMatrix();
+                glm::mat4 proj = cam.GetProjectionMatrix(windowWidth, windowHeight);
+
+                e.Render(&sp, &view, &proj, &cam.transform, &fogs);
+                e3.Render(&sp, &view, &proj, &cam.transform, &fogs);
+                e4.Render(&sp, &view, &proj, &cam.transform, &fogs);
+
+                crowbar.Render(&sp, &view, &proj, &cam.transform, &fogs);
+
+                e_cube_surfrottest.Render(&sp, &view, &proj, &cam.transform, &fogs);
+
+                e2.Render(&sp, &view, &proj, &cam.transform, &fogs);
+
+                relsys_e_parent.Render(&sp, &view, &proj, &cam.transform, &fogs);
+                relsys_e_child.Render(&sp, &view, &proj, &cam.transform, &fogs);
+
+                btn.Render(&sp, &view, &proj, &cam.transform, &fogs);
+                btn2.Render(&sp, &view, &proj, &cam.transform, &fogs);
+
+                //ground.Render(&sp, &view, &proj);
+                //prop.Render(&sp, &view, &proj);
+                
+                glfwSwapBuffers(window);
+
+            }
+            glfwPollEvents();
         }
-        glfwPollEvents();
     }
+
+    quit:
     
+    alcMakeContextCurrent(NULL);
     alcDestroyContext(alctx);
     alcCloseDevice(aldev);
     glfwTerminate();
 
-    std::cout << "successful quit" << std::endl;
+    if (exitcode == EXIT_SUCCESS) std::cout << "successful quit" << std::endl;
 
-    return 0;
+    return exitcode;
 }
 
 int initOpenGL(GLFWwindow **window)

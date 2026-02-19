@@ -48,6 +48,7 @@
     {
         "files":
         [
+            "src/openal.cpp",
             "src/main.cpp",
             "src/utils.cpp",
 
