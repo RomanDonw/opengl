@@ -380,19 +380,38 @@ int main()
         else inv_mass = 0;*/
 
         AudioEffectSlot reverbslot = AudioEffectSlot();
-
         AudioEffect reverbeff = AudioEffect();
-        reverbeff.SetEffectType(AL_EFFECT_REVERB);
-
+        reverbeff.SetEffectType(AL_EFFECT_EAXREVERB);
         reverbeff.AttachToSlot(&reverbslot);
 
-        reverbeff.SetEffectFloat(AL_REVERB_DENSITY, 1);
-        reverbeff.SetEffectFloat(AL_REVERB_DIFFUSION, 0.9);
-        reverbeff.SetEffectFloat(AL_REVERB_GAIN, 0.3);
-        reverbeff.SetEffectFloat(AL_REVERB_DECAY_TIME, 2.9);
-        reverbeff.SetEffectFloat(AL_REVERB_DECAY_HFRATIO, 0.7);
-        reverbeff.SetEffectFloat(AL_REVERB_ROOM_ROLLOFF_FACTOR, 0.1);
+        reverbeff.SetEffectFloat(AL_EAXREVERB_DENSITY, 1);
+        reverbeff.SetEffectFloat(AL_EAXREVERB_DIFFUSION, 1);
+        reverbeff.SetEffectFloat(AL_EAXREVERB_GAIN, 0.3);
+        reverbeff.SetEffectFloat(AL_EAXREVERB_DECAY_TIME, 1.5/*0.1*/);
+        reverbeff.SetEffectFloat(AL_EAXREVERB_DECAY_HFRATIO, 0.7);
+        reverbeff.SetEffectFloat(AL_EAXREVERB_ROOM_ROLLOFF_FACTOR, 0.1);
 
+        reverbeff.SetEffectFloat(AL_EAXREVERB_ECHO_DEPTH, 1);
+        reverbeff.SetEffectFloat(AL_EAXREVERB_ECHO_TIME, 0.25);
+
+        reverbeff.SetEffectFloat(AL_EAXREVERB_REFLECTIONS_GAIN, 3);
+        
+        reverbeff.SetEffectFloat(AL_EAXREVERB_LATE_REVERB_GAIN, 2);
+
+        reverbeff.SetEffectFloat(AL_EAXREVERB_LATE_REVERB_GAIN, 10);
+        reverbeff.SetEffectFloat(AL_EAXREVERB_LATE_REVERB_DELAY, 0.1);
+        printf("%d\n", alGetError());
+
+
+        /*AudioEffectSlot echoslot = AudioEffectSlot();
+        AudioEffect echoeff = AudioEffect();
+        echoeff.SetEffectType(AL_EFFECT_ECHO);
+        echoeff.AttachToSlot(&echoslot);
+
+        //reverbeff.SetEffectFloat();
+        echoeff.SetEffectFloat(AL_ECHO_DELAY, 0.05);
+        echoeff.SetEffectFloat(AL_ECHO_FEEDBACK, 0);
+        echoeff.SetEffectFloat(AL_ECHO_SPREAD, 0);*/
 
         glm::vec3 v = glm::vec3(1.0f, 0.0f, 0.0f);
         std::cout << Utils::tostring(Utils::angles(v)) << std::endl;
@@ -417,12 +436,33 @@ int main()
         source.Play();
         //source.transform = Transform();
 
+
+        Texture maxwellcat_tex = Texture();
+        if (maxwellcat_tex.LoadFromUCTEXFile("textures/maxwell.uctex"))
+        {
+            printf("loaded \"textures/maxwell.uctex\"\n");
+
+            maxwellcat_tex.SetDefaultParametres();
+            maxwellcat_tex.SetLinearSmoothing();
+        }
+
+        Mesh maxwellcat_mesh = Mesh();
+        if (maxwellcat_mesh.LoadFromUCMESHFile("models/maxwell_the_cat.ucmesh")) printf("loaded \"models/maxwell_the_cat.ucmesh\"\n");
+
+        glm::vec3 maxwellcat_default_scale = glm::vec3(0.05);//glm::vec3(0.0005);
+        Entity maxwellcat = Entity(Transform({0, 0, -5}, glm::quat(glm::vec3(0)), maxwellcat_default_scale));
+        /*maxwellcat.surfaces.push_back(Surface(&maxwellcat_bodym, &maxwellcat_bodyt));
+        maxwellcat.surfaces.push_back(Surface(&maxwellcat_whiskersm, &maxwellcat_whiskerst));*/
+        maxwellcat.surfaces.push_back(Surface(&maxwellcat_mesh, &maxwellcat_tex));
+
+
         AudioClip zapclip = AudioClip();
         if (zapclip.LoadFromUCSOUNDFile("zapmachine.ucsound")) std::cout << "loaded sound \"/zapmachine.ucsound\"." << std::endl;
 
         AudioSource zapsrc = AudioSource();
-        zapsrc.SetParent(&e, false);
+        zapsrc.SetParent(&maxwellcat, false);
         reverbslot.AddSource(&zapsrc);
+        //echoslot.AddSource(&zapsrc);
         
         zapsrc.SetLooping(true);
         zapsrc.SetSourceFloat(AL_REFERENCE_DISTANCE, 0);
@@ -437,7 +477,7 @@ int main()
         if (labdroneclip.LoadFromUCSOUNDFile("labdrone2.ucsound")) std::cout << "loaded sound \"/labdrone2.ucsound\"." << std::endl;
 
         AudioSource labdronesrc = AudioSource();
-        labdronesrc.SetParent(&e, false);
+        labdronesrc.SetParent(&zapsrc, false);
         reverbslot.AddSource(&labdronesrc);
         
         labdronesrc.SetLooping(true);
@@ -562,25 +602,6 @@ int main()
         Texture maxwellcat_whiskerst = Texture();
         if (maxwellcat_whiskerst.LoadFromUCTEXFile("textures/maxwellcat/whiskers.uctex")) printf("loaded \"textures/maxwellcat/whiskers.uctex\"\n");*/
 
-        Texture maxwellcat_tex = Texture();
-        if (maxwellcat_tex.LoadFromUCTEXFile("textures/maxwell.uctex"))
-        {
-            printf("loaded \"textures/maxwell.uctex\"\n");
-
-            maxwellcat_tex.SetDefaultParametres();
-            maxwellcat_tex.SetLinearSmoothing();
-        }
-
-        Mesh maxwellcat_mesh = Mesh();
-        if (maxwellcat_mesh.LoadFromUCMESHFile("models/maxwell_the_cat.ucmesh")) printf("loaded \"models/maxwell_the_cat.ucmesh\"\n");
-
-        glm::vec3 maxwellcat_default_scale = glm::vec3(0.05);//glm::vec3(0.0005);
-        Entity maxwellcat = Entity(Transform({0, 0, -5}, glm::quat(glm::vec3(0)), maxwellcat_default_scale));
-        /*maxwellcat.surfaces.push_back(Surface(&maxwellcat_bodym, &maxwellcat_bodyt));
-        maxwellcat.surfaces.push_back(Surface(&maxwellcat_whiskersm, &maxwellcat_whiskerst));*/
-        maxwellcat.surfaces.push_back(Surface(&maxwellcat_mesh, &maxwellcat_tex));
-
-
         HL1ToggleButtonSettings setts;
 
         setts.mesh = &rect_button;
@@ -609,6 +630,8 @@ int main()
             if (button->IsEnabled()) ams_run_step_per_second = 1 / AMS_RUN_ANIM_TIME;
             else ams_run_step_per_second = -1 / AMS_RUN_ANIM_TIME;
 
+            zapsrc.Play();
+
             ambsrc.SetCurrentClip(&lightswitch2clip);
             ambsrc.Play();
         };
@@ -631,7 +654,7 @@ int main()
             }
         };
 
-
+        bool f_pressed = false;
 
         bool lmb_pressed = false;
         float lastX = windowWidth / 2, lastY = windowHeight / 2;
@@ -704,6 +727,21 @@ int main()
 
                     lastX = mouseX;
                     lastY = mouseY;
+
+                    if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS && !f_pressed)
+                    {
+                        f_pressed = true;
+                        printf("pressed\n");
+
+                        AudioSourceState st = zapsrc.GetState();
+                        if (st == PAUSED) zapsrc.Play();
+                        else if (st == PLAYING)
+                        {
+                            zapsrc.Pause();
+                            printf("asd\n");
+                        }
+                    }
+                    else if (glfwGetKey(window, GLFW_KEY_F) == GLFW_RELEASE && f_pressed) f_pressed = false;
                 }
 
                 // ===== MAIN =====
@@ -744,7 +782,7 @@ int main()
                 }
 
                 if (ams_run_progress == 0) zapsrc.Pause();
-                else if (zapsrc.GetState() != PLAYING) zapsrc.Play();
+                //else if (zapsrc.GetState() != PLAYING) zapsrc.Play();
                 else zapsrc.SetSourceFloat(AL_PITCH, ams_run_progress);
 
                 btn2.locked = ams_run_progress != 1;
