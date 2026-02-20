@@ -334,7 +334,7 @@ int main()
         ===== ===== =====
         */
 
-        Entity e = Entity(Transform({0.0f, 0.0f, -5.0f}));
+        Entity e = Entity(Transform({0.0f, 0.0f, -7.5f}));
         e.surfaces.push_back(Surface(&tex, &tri, NoCulling));
 
         Entity e2 = Entity();
@@ -466,15 +466,17 @@ int main()
         AudioClip steamburstclip = AudioClip();
         steamburstclip.LoadFromUCSOUNDFile("sfx/steamburst.ucsound");
 
-        AudioSource steamburstsrc = AudioSource();
-        steamburstsrc.SetParent(&zapsrc, false);
-        reverbslot.AddSource(&steamburstsrc);
+        AudioClip lightswitch2clip = AudioClip();
+        if (lightswitch2clip.LoadFromUCSOUNDFile("sfx/button/lightswitch2.ucsound")) std::cout << "loaded \"sfx/button/lightswitch2.ucsound\"" << std::endl;
 
-        steamburstsrc.SetSourceFloat(AL_REFERENCE_DISTANCE, 0);
-        steamburstsrc.SetSourceFloat(AL_MAX_DISTANCE, 16);
-        steamburstsrc.SetSourceFloat(AL_GAIN, 0.3f);
+        AudioSource ambsrc = AudioSource();
+        ambsrc.SetParent(&zapsrc, false);
+        reverbslot.AddSource(&ambsrc);
 
-        steamburstsrc.SetCurrentClip(&steamburstclip);
+        ambsrc.SetSourceFloat(AL_REFERENCE_DISTANCE, 0);
+        ambsrc.SetSourceFloat(AL_MAX_DISTANCE, 16);
+        ambsrc.SetSourceFloat(AL_GAIN, 0.3f);
+
 
         //labdronesrcpitch150.Play();
 
@@ -540,11 +542,44 @@ int main()
             btn3_on.SetLinearSmoothing();
         }
 
+
         Mesh rect_button = Mesh();
         if (rect_button.LoadFromUCMESHFile("models/buttons/4.ucmesh")) std::cout << "loaded \"/models/buttons/4.ucmesh\"" << std::endl;
 
         Mesh square_button = Mesh();
         if (square_button.LoadFromUCMESHFile("models/buttons/3.ucmesh")) std::cout << "loaded \"/models/buttons/3.ucmesh\"" << std::endl;
+
+        /*
+        Mesh maxwellcat_bodym = Mesh();
+        if (maxwellcat_bodym.LoadFromUCMESHFile("models/maxwellcat/body.ucmesh")) std::cout << "loaded \"/models/maxwellcat/body.ucmesh\"" << std::endl;
+
+        Mesh maxwellcat_whiskersm = Mesh();
+        if (maxwellcat_whiskersm.LoadFromUCMESHFile("models/maxwellcat/whiskers.ucmesh")) std::cout << "loaded \"/models/maxwellcat/whiskers.ucmesh\"" << std::endl;
+
+        Texture maxwellcat_bodyt = Texture();
+        if (maxwellcat_bodyt.LoadFromUCTEXFile("textures/maxwellcat/body.uctex")) printf("loaded \"textures/maxwellcat/body.uctex\"\n");
+
+        Texture maxwellcat_whiskerst = Texture();
+        if (maxwellcat_whiskerst.LoadFromUCTEXFile("textures/maxwellcat/whiskers.uctex")) printf("loaded \"textures/maxwellcat/whiskers.uctex\"\n");*/
+
+        Texture maxwellcat_tex = Texture();
+        if (maxwellcat_tex.LoadFromUCTEXFile("textures/maxwell.uctex"))
+        {
+            printf("loaded \"textures/maxwell.uctex\"\n");
+
+            maxwellcat_tex.SetDefaultParametres();
+            maxwellcat_tex.SetLinearSmoothing();
+        }
+
+        Mesh maxwellcat_mesh = Mesh();
+        if (maxwellcat_mesh.LoadFromUCMESHFile("models/maxwell_the_cat.ucmesh")) printf("loaded \"models/maxwell_the_cat.ucmesh\"\n");
+
+        glm::vec3 maxwellcat_default_scale = glm::vec3(0.05);//glm::vec3(0.0005);
+        Entity maxwellcat = Entity(Transform({0, 0, -5}, glm::quat(glm::vec3(0)), maxwellcat_default_scale));
+        /*maxwellcat.surfaces.push_back(Surface(&maxwellcat_bodym, &maxwellcat_bodyt));
+        maxwellcat.surfaces.push_back(Surface(&maxwellcat_whiskersm, &maxwellcat_whiskerst));*/
+        maxwellcat.surfaces.push_back(Surface(&maxwellcat_mesh, &maxwellcat_tex));
+
 
         HL1ToggleButtonSettings setts;
 
@@ -569,13 +604,16 @@ int main()
         float ams_run_step_per_second = 0;
         const float AMS_RUN_ANIM_TIME = 10;
 
-        btn.OnClickCallback = [&ams_run_step_per_second, AMS_RUN_ANIM_TIME](HL1ToggleButton *button)
+        btn.OnClickCallback = [&](HL1ToggleButton *button)
         {
             if (button->IsEnabled()) ams_run_step_per_second = 1 / AMS_RUN_ANIM_TIME;
             else ams_run_step_per_second = -1 / AMS_RUN_ANIM_TIME;
+
+            ambsrc.SetCurrentClip(&lightswitch2clip);
+            ambsrc.Play();
         };
 
-        btn2.OnClickCallback = [&labdronesrc, &labdronesrcpitch150](HL1ToggleButton *button)
+        btn2.OnClickCallback = [&](HL1ToggleButton *button)
         {
             if (button->IsEnabled())
             {
@@ -586,8 +624,14 @@ int main()
             {
                 labdronesrc.Rewind();
                 labdronesrcpitch150.Rewind();
+                
+                //glm::vec3 euler = glm::eulerAngles(maxwellcat.transform.GetRotation());
+                //maxwellcat.transform.SetRotation(glm::quat(glm::vec3(0, euler.y, 0)));
+                maxwellcat.transform.SetScale(maxwellcat_default_scale);
             }
         };
+
+
 
         bool lmb_pressed = false;
         float lastX = windowWidth / 2, lastY = windowHeight / 2;
@@ -679,7 +723,8 @@ int main()
                     if ((ams_run_progress >= 4 / AMS_RUN_ANIM_TIME && ams_run_progress < (4 + ams_run_step_per_second) / AMS_RUN_ANIM_TIME) ||\
                         (ams_run_progress >= 8 / AMS_RUN_ANIM_TIME && ams_run_progress < (8 + ams_run_step_per_second) / AMS_RUN_ANIM_TIME))
                     {
-                        steamburstsrc.Play();
+                        ambsrc.SetCurrentClip(&steamburstclip);
+                        ambsrc.Play();
                     }
                 }
                 else if (ams_run_step_per_second < 0)
@@ -694,7 +739,7 @@ int main()
                     //if ((ams_run_progress >= 4 / AMS_RUN_ANIM_TIME && ams_run_progress < (4 - ams_run_step_per_second) / AMS_RUN_ANIM_TIME) ||\
                     //    (ams_run_progress >= 8 / AMS_RUN_ANIM_TIME && ams_run_progress < (8 - ams_run_step_per_second) / AMS_RUN_ANIM_TIME))
                     //{
-                    //    steamburstsrc.Play();
+                    //    ambsrc.Play();
                     //}
                 }
 
@@ -703,12 +748,14 @@ int main()
                 else zapsrc.SetSourceFloat(AL_PITCH, ams_run_progress);
 
                 btn2.locked = ams_run_progress != 1;
+                if (btn2.IsEnabled() && ams_run_progress < 1) btn2.SetEnabled(false);
                 btn.locked = (ams_run_progress != 0 && ams_run_progress != 1) || btn2.IsEnabled();
                 
                 glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-                e.transform.Rotate(glm::vec3(glm::radians(90.0f) * delta * (btn2.IsEnabled() ? 1 : 0), ams_run_progress * glm::radians(360.0f * 2) * delta, glm::radians(45.0f) * delta * (btn2.IsEnabled() ? 1 : 0)));
+                maxwellcat.transform.Rotate(glm::vec3(0, ams_run_progress * glm::radians(360.0f * 4) * delta, glm::radians(45.0f) * delta * (btn2.IsEnabled() ? 1 : 0)));
+                if (btn2.IsEnabled()) maxwellcat.transform.SetScale(maxwellcat_default_scale + maxwellcat_default_scale * glm::vec3(0, glm::sin(glm::radians(90 * glfwGetTime())), 0));
 
                 //tr_crowbar_cyl->Rotate(glm::vec3(glm::radians(360.0f) * delta, 0, 0));
 
@@ -787,16 +834,18 @@ int main()
 
                 e_cube_surfrottest.Render(&sp, &view, &proj, &cam.transform, &fogs);
 
-                e2.Render(&sp, &view, &proj, &cam.transform, &fogs);
-
                 relsys_e_parent.Render(&sp, &view, &proj, &cam.transform, &fogs);
                 relsys_e_child.Render(&sp, &view, &proj, &cam.transform, &fogs);
 
                 btn.Render(&sp, &view, &proj, &cam.transform, &fogs);
                 btn2.Render(&sp, &view, &proj, &cam.transform, &fogs);
 
+                maxwellcat.Render(&sp, &view, &proj, &cam.transform, &fogs);
+
                 //ground.Render(&sp, &view, &proj);
                 //prop.Render(&sp, &view, &proj);
+
+                e2.Render(&sp, &view, &proj, &cam.transform, &fogs);
                 
                 glfwSwapBuffers(window);
 
