@@ -379,6 +379,21 @@ int main()
         if (mass > 0) inv_mass = 1.0f / mass;
         else inv_mass = 0;*/
 
+        AudioEffectSlot reverbslot = AudioEffectSlot();
+
+        AudioEffect reverbeff = AudioEffect();
+        reverbeff.SetEffectType(AL_EFFECT_REVERB);
+
+        reverbeff.AttachToSlot(&reverbslot);
+
+        reverbeff.SetEffectFloat(AL_REVERB_DENSITY, 1);
+        reverbeff.SetEffectFloat(AL_REVERB_DIFFUSION, 0.9);
+        reverbeff.SetEffectFloat(AL_REVERB_GAIN, 0.3);
+        reverbeff.SetEffectFloat(AL_REVERB_DECAY_TIME, 2.9);
+        reverbeff.SetEffectFloat(AL_REVERB_DECAY_HFRATIO, 0.7);
+        reverbeff.SetEffectFloat(AL_REVERB_ROOM_ROLLOFF_FACTOR, 0.1);
+
+
         glm::vec3 v = glm::vec3(1.0f, 0.0f, 0.0f);
         std::cout << Utils::tostring(Utils::angles(v)) << std::endl;
 
@@ -407,6 +422,7 @@ int main()
 
         AudioSource zapsrc = AudioSource();
         zapsrc.SetParent(&e, false);
+        reverbslot.AddSource(&zapsrc);
         
         zapsrc.SetLooping(true);
         zapsrc.SetSourceFloat(AL_REFERENCE_DISTANCE, 0);
@@ -422,6 +438,7 @@ int main()
 
         AudioSource labdronesrc = AudioSource();
         labdronesrc.SetParent(&e, false);
+        reverbslot.AddSource(&labdronesrc);
         
         labdronesrc.SetLooping(true);
         labdronesrc.SetSourceFloat(AL_REFERENCE_DISTANCE, 0);
@@ -435,6 +452,7 @@ int main()
 
         AudioSource labdronesrcpitch150 = AudioSource();
         labdronesrcpitch150.SetParent(&labdronesrc, false);
+        reverbslot.AddSource(&labdronesrcpitch150);
         
         labdronesrcpitch150.SetLooping(true);
         labdronesrcpitch150.SetSourceFloat(AL_REFERENCE_DISTANCE, 0);
@@ -450,6 +468,7 @@ int main()
 
         AudioSource steamburstsrc = AudioSource();
         steamburstsrc.SetParent(&zapsrc, false);
+        reverbslot.AddSource(&steamburstsrc);
 
         steamburstsrc.SetSourceFloat(AL_REFERENCE_DISTANCE, 0);
         steamburstsrc.SetSourceFloat(AL_MAX_DISTANCE, 16);
