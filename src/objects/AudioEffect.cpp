@@ -17,6 +17,7 @@ AudioEffect::~AudioEffect()
 
 void AudioEffect::SetEffectFloat(ALenum option, ALfloat value) { alEffectf(effect, option, value); }
 
+AudioEffectSlot *AudioEffect::GetAttachedSlot() { return attached_slot; }
 void AudioEffect::AttachToSlot(AudioEffectSlot *slot)
 {
     if (attached_slot)

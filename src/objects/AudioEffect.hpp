@@ -9,6 +9,7 @@ class AudioEffect
 {
     private:
         ALuint effect;
+
         AudioEffectSlot *attached_slot = nullptr;
 
     public:
@@ -17,6 +18,7 @@ class AudioEffect
 
         void SetEffectFloat(ALenum option, ALfloat value);
 
+        AudioEffectSlot *GetAttachedSlot();
         void AttachToSlot(AudioEffectSlot *slot);
 };
 

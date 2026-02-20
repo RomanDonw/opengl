@@ -73,6 +73,8 @@ AudioSourceState AudioSource::GetState()
     return UNDEFINED;
 }
 
+AudioEffectSlot *AudioSource::GetAttachedSlot() { return attached_slot; }
+
 /*bool AudioSource::CanClipBeChanged()
 {
     AudioSourceState state = GetState();

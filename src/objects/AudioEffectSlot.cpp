@@ -13,10 +13,12 @@ AudioEffectSlot::AudioEffectSlot()
 AudioEffectSlot::~AudioEffectSlot()
 {
     if (attached_effect) attached_effect->AttachToSlot(nullptr);
+    for (AudioSource *src : attached_sources) RemoveSource(src);
     alDeleteAuxiliaryEffectSlots(1, &slot);
 }
 
 bool AudioEffectSlot::HasAttachedSource(AudioSource *source) { return std::count(attached_sources.begin(), attached_sources.end(), source) > 0; } //{ return attached_sources.contains(source); }
+std::vector<AudioSource *> AudioEffectSlot::GetAttachedSources() { return attached_sources; }
 bool AudioEffectSlot::AddSource(AudioSource *source)
 {
     if (HasAttachedSource(source)) return false;

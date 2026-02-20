@@ -24,6 +24,7 @@ class AudioEffectSlot
         ~AudioEffectSlot();
 
         bool HasAttachedSource(AudioSource *source);
+        std::vector<AudioSource *> GetAttachedSources();
         bool AddSource(AudioSource *source);
         bool RemoveSource(AudioSource *source);
 };

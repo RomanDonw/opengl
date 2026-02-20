@@ -24,8 +24,9 @@ class AudioSource : public GameObject
 
     protected:
         ALuint source;
-        AudioClip *currclip = nullptr;
         bool looped;
+
+        AudioClip *currclip = nullptr;
         AudioEffectSlot *attached_slot = nullptr;
 
         void constructor();
@@ -48,6 +49,7 @@ class AudioSource : public GameObject
         void SetLooping(bool loop);
 
         AudioSourceState GetState();
+        AudioEffectSlot *GetAttachedSlot();
 
         //bool CanClipBeChanged();
         AudioClip *GetCurrentClip();
