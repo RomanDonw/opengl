@@ -2,10 +2,11 @@
 
 #include "AudioEffectSlot.hpp"
 
-AudioEffect::AudioEffect(ALenum type)
+#include <cstdio>
+
+AudioEffect::AudioEffect()
 {
     alGenEffects(1, &effect);
-    alEffecti(effect, AL_EFFECT_TYPE, type);
 }
 
 AudioEffect::~AudioEffect()
@@ -15,11 +16,14 @@ AudioEffect::~AudioEffect()
     alDeleteEffects(1, &effect);
 }
 
+void AudioEffect::SetEffectType(ALenum type) { alEffecti(effect, AL_EFFECT_TYPE, type); }
 void AudioEffect::SetEffectFloat(ALenum option, ALfloat value) { alEffectf(effect, option, value); }
 
 AudioEffectSlot *AudioEffect::GetAttachedSlot() { return attached_slot; }
 void AudioEffect::AttachToSlot(AudioEffectSlot *slot)
 {
+    if (slot == attached_slot) return;
+
     if (attached_slot)
     {
         alAuxiliaryEffectSloti(attached_slot->slot, AL_EFFECTSLOT_EFFECT, AL_EFFECT_NULL);
@@ -28,7 +32,7 @@ void AudioEffect::AttachToSlot(AudioEffectSlot *slot)
     if (slot)
     {
         alAuxiliaryEffectSloti(slot->slot, AL_EFFECTSLOT_EFFECT, effect);
-        attached_slot->attached_effect = this;
+        slot->attached_effect = this;
     }
 
     attached_slot = slot;

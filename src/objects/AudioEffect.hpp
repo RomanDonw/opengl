@@ -13,9 +13,10 @@ class AudioEffect
         AudioEffectSlot *attached_slot = nullptr;
 
     public:
-        AudioEffect(ALenum type);
+        AudioEffect();
         ~AudioEffect();
 
+        void SetEffectType(ALenum type);
         void SetEffectFloat(ALenum option, ALfloat value);
 
         AudioEffectSlot *GetAttachedSlot();
