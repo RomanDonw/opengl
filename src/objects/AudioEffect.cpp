@@ -2,8 +2,6 @@
 
 #include "AudioEffectSlot.hpp"
 
-#include <cstdio>
-
 AudioEffect::AudioEffect()
 {
     alGenEffects(1, &effect);
