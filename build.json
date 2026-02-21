@@ -49,7 +49,6 @@
         "files":
         [
             "src/openal.cpp",
-            "src/main.cpp",
             "src/utils.cpp",
 
             "src/objects/ShaderProgram.cpp",
@@ -58,11 +57,13 @@
             "src/objects/AudioClip.cpp",
             "src/objects/AudioSource.cpp",
             "src/objects/AudioListener.cpp",
-            "src/objects/AudioEffect.cpp",
+            "src/objects/AudioEffectProperties.cpp",
             "src/objects/AudioEffectSlot.cpp",
 
             "src/objects/GameObject.cpp",
-            "src/objects/GameObjectTransform.cpp"
+            "src/objects/GameObjectTransform.cpp",
+
+            "src/main.cpp"
         ]
     }
 }

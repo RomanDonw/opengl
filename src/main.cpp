@@ -167,7 +167,7 @@ int main()
     }
     alcMakeContextCurrent(alctx);
 
-    alDistanceModel(AL_LINEAR_DISTANCE);
+    alDistanceModel(AL_LINEAR_DISTANCE_CLAMPED);
 
     if (alcIsExtensionPresent(aldev, "ALC_EXT_EFX") == AL_FALSE)
     {
@@ -380,28 +380,19 @@ int main()
         else inv_mass = 0;*/
 
         AudioEffectSlot reverbslot = AudioEffectSlot();
-        AudioEffect reverbeff = AudioEffect();
-        reverbeff.SetEffectType(AL_EFFECT_EAXREVERB);
-        reverbeff.AttachToSlot(&reverbslot);
+        {
+            AudioEffectProperties eff = AudioEffectProperties();
+            eff.SetEffectType(AL_EFFECT_EAXREVERB);
 
-        reverbeff.SetEffectFloat(AL_EAXREVERB_DENSITY, 1);
-        reverbeff.SetEffectFloat(AL_EAXREVERB_DIFFUSION, 1);
-        reverbeff.SetEffectFloat(AL_EAXREVERB_GAIN, 0.3);
-        reverbeff.SetEffectFloat(AL_EAXREVERB_DECAY_TIME, 1.5/*0.1*/);
-        reverbeff.SetEffectFloat(AL_EAXREVERB_DECAY_HFRATIO, 0.7);
-        reverbeff.SetEffectFloat(AL_EAXREVERB_ROOM_ROLLOFF_FACTOR, 0.1);
+            eff.SetEffectFloat(AL_EAXREVERB_DENSITY, 1);
+            eff.SetEffectFloat(AL_EAXREVERB_DIFFUSION, 0.9);
+            eff.SetEffectFloat(AL_EAXREVERB_GAIN, 0.3);
+            eff.SetEffectFloat(AL_EAXREVERB_DECAY_TIME, 3.2);
+            eff.SetEffectFloat(AL_EAXREVERB_DECAY_HFRATIO, 0.7);
+            eff.SetEffectFloat(AL_EAXREVERB_ROOM_ROLLOFF_FACTOR, 0.1);
 
-        reverbeff.SetEffectFloat(AL_EAXREVERB_ECHO_DEPTH, 1);
-        reverbeff.SetEffectFloat(AL_EAXREVERB_ECHO_TIME, 0.25);
-
-        reverbeff.SetEffectFloat(AL_EAXREVERB_REFLECTIONS_GAIN, 3);
-        
-        reverbeff.SetEffectFloat(AL_EAXREVERB_LATE_REVERB_GAIN, 2);
-
-        reverbeff.SetEffectFloat(AL_EAXREVERB_LATE_REVERB_GAIN, 10);
-        reverbeff.SetEffectFloat(AL_EAXREVERB_LATE_REVERB_DELAY, 0.1);
-        printf("%d\n", alGetError());
-
+            reverbslot.ApplyEffect(eff);
+        }
 
         /*AudioEffectSlot echoslot = AudioEffectSlot();
         AudioEffect echoeff = AudioEffect();
@@ -465,7 +456,7 @@ int main()
         //echoslot.AddSource(&zapsrc);
         
         zapsrc.SetLooping(true);
-        zapsrc.SetSourceFloat(AL_REFERENCE_DISTANCE, 0);
+        zapsrc.SetSourceFloat(AL_REFERENCE_DISTANCE, 4);
         zapsrc.SetSourceFloat(AL_MAX_DISTANCE, 16);
         zapsrc.SetSourceFloat(AL_GAIN, 1.0f);
 
@@ -731,14 +722,17 @@ int main()
                     if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS && !f_pressed)
                     {
                         f_pressed = true;
-                        printf("pressed\n");
 
                         AudioSourceState st = zapsrc.GetState();
-                        if (st == PAUSED) zapsrc.Play();
+                        if (st == PAUSED)
+                        {
+                            zapsrc.Play();
+                            printf("Resumed zapsrc.\n");
+                        }
                         else if (st == PLAYING)
                         {
                             zapsrc.Pause();
-                            printf("asd\n");
+                            printf("Paused zapsrc.\n");
                         }
                     }
                     else if (glfwGetKey(window, GLFW_KEY_F) == GLFW_RELEASE && f_pressed) f_pressed = false;

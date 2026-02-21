@@ -6,7 +6,7 @@
 #include "objects/AudioClip.hpp"
 #include "objects/AudioSource.hpp"
 #include "objects/AudioListener.hpp"
-#include "objects/AudioEffect.hpp"
+#include "objects/AudioEffectProperties.hpp"
 #include "objects/AudioEffectSlot.hpp"
 
 struct
