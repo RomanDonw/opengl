@@ -2,13 +2,8 @@
 
 #include "../../openal.hpp"
 
-/* ===== =====  AudioListenerAlreadyExistException  ===== ===== */
-
-AudioListenerAlreadyExistException::AudioListenerAlreadyExistException() {}
-
-const char *AudioListenerAlreadyExistException::what() const noexcept { return "can be exist only one OpenAL listener"; }
-
-/* ===== =====  AudioListener  ===== ===== */
+#include <exception>
+#include <stdexcept>
 
 // === PRIVATE ===
 
@@ -22,7 +17,7 @@ struct
 
 void AudioListener::constructor()
 {
-    if (hasListener) throw AudioListenerAlreadyExistException();
+    if (hasListener) throw std::runtime_error("can be exist only one OpenAL listener");
     hasListener = true;
 }
 

@@ -3,17 +3,6 @@
 
 #include "../GameObject.hpp"
 
-#include <exception>
-#include <string>
-
-class AudioListenerAlreadyExistException : public std::exception
-{
-    public:
-        AudioListenerAlreadyExistException();
-
-        const char *what() const noexcept override;
-};
-
 class AudioListener : public GameObject
 {
     private:
