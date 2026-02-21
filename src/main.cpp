@@ -147,7 +147,7 @@ int main()
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    ALCdevice *aldev = alcOpenDevice(NULL);
+    /*ALCdevice *aldev = alcOpenDevice(NULL);
     if (!aldev)
     {
         std::cout << "Failed to open OpenAL device." << std::endl;
@@ -165,11 +165,11 @@ int main()
         glfwTerminate();
         return 1;
     }
-    alcMakeContextCurrent(alctx);
+    alcMakeContextCurrent(alctx);*/
 
-    alDistanceModel(AL_LINEAR_DISTANCE_CLAMPED);
+    //alDistanceModel(AL_LINEAR_DISTANCE_CLAMPED);
 
-    if (alcIsExtensionPresent(aldev, "ALC_EXT_EFX") == AL_FALSE)
+    /*if (alcIsExtensionPresent(aldev, "ALC_EXT_EFX") == AL_FALSE)
     {
         std::cout << "OpenAL EFX extension doesn't exist." << std::endl;
         exitcode = 1;
@@ -181,7 +181,23 @@ int main()
         std::cout << "Failed to initialize OpenAL EFX extension." << std::endl;
         exitcode = 1;
         goto quit;
+    }*/
+
+    AudioDevice *dev = nullptr;
+    try
+    {
+        dev = new AudioDevice(NULL);
+        AudioSystem::SetCurrentDevice(dev);
     }
+    catch (const std::exception &e)
+    {
+        std::cout << e.what() << std::endl;
+        exitcode = 1;
+        goto quit;
+    }
+
+    AudioSystem::SetDistanceModel(AL_LINEAR_DISTANCE_CLAMPED);
+
 
     // ========================================
     // ========================================
@@ -786,7 +802,7 @@ int main()
                 glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-                maxwellcat.transform.Rotate(glm::vec3(0, ams_run_progress * glm::radians(360.0f * 4) * delta, glm::radians(45.0f) * delta * (btn2.IsEnabled() ? 1 : 0)));
+                maxwellcat.transform.Rotate(glm::vec3(0, ams_run_progress * glm::radians(360.0f * 4 * 4) * delta, glm::radians(45.0f) * delta * (btn2.IsEnabled() ? 1 : 0)));
                 if (btn2.IsEnabled()) maxwellcat.transform.SetScale(maxwellcat_default_scale + maxwellcat_default_scale * glm::vec3(0, glm::sin(glm::radians(90 * glfwGetTime())), 0));
 
                 //tr_crowbar_cyl->Rotate(glm::vec3(glm::radians(360.0f) * delta, 0, 0));
@@ -888,9 +904,7 @@ int main()
 
     quit:
     
-    alcMakeContextCurrent(NULL);
-    alcDestroyContext(alctx);
-    alcCloseDevice(aldev);
+    if (dev) delete dev;
     glfwTerminate();
 
     if (exitcode == EXIT_SUCCESS) std::cout << "successful quit" << std::endl;
