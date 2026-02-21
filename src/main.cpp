@@ -25,7 +25,7 @@ const char *vertexShaderSource = R"(
 layout (location = 0) in vec3 vertexPosition;
 layout (location = 1) in vec2 vertexTexturePosition;
 
-out vec3 position;
+out vec3 globalVertexPosition;
 out vec2 texturePosition;
 
 uniform mat4 model;
@@ -34,17 +34,20 @@ uniform mat4 projection;
 
 void main()
 {
-    position = vertexPosition;
+    vec4 globvpos4 = model * vec4(vertexPosition, 1.0);
+
+    globalVertexPosition = vec3(globvpos4.x, globvpos4.y, globvpos4.z);
     texturePosition = vertexTexturePosition;
 
-    gl_Position = projection * view * model * vec4(vertexPosition, 1.0);
+    //gl_Position = projection * view * model * vec4(vertexPosition, 1.0);
+    gl_Position = projection * view * globvpos4;
 }
 )";
 
 const char *fragmentShaderSource = R"(
 #version 330 core
 
-in vec3 position;
+in vec3 globalVertexPosition;
 in vec2 texturePosition;
 
 out vec4 FragColor;
@@ -68,16 +71,12 @@ uniform vec3 cameraRight;
 
 void main()
 {
-    vec3 reltocam = position - cameraPosition;
-    float distfromcam = length(reltocam);
+    vec4 vertcol = (hasTexture ? texture2D(texture, texturePosition) : vec4(1.0)) * color;
 
-    float fogIntensity = ((fogEndDistance - fogStartDistance) == 0) ? min(1.0, max(0.0, (distfromcam - fogStartDistance) / (fogEndDistance - fogStartDistance))) : 0.0;
+    float dist = length(globalVertexPosition - cameraPosition);
+    float fog_int_factor = min(1, max(0, (dist - fogStartDistance) / (fogEndDistance - fogStartDistance)));
 
-    //FragColor = mix((hasTexture ? texture2D(texture, texturePosition) : vec4(1.0)) * color, fogColor, fogEnabled ? fogIntensity : 0.0);
-    //FragColor = (hasTexture ? texture2D(texture, texturePosition) : vec4(1.0)) * color;
-
-    //FragColor = mix((hasTexture ? texture2D(texture, texturePosition) : vec4(1.0)) * color, vec4(fogColor, 1.0), 0.0);
-    FragColor = mix((hasTexture ? texture2D(texture, texturePosition) : vec4(1.0)) * color, vec4(fogColor, 1.0), fogEnabled ? fogIntensity : 0.0);
+    FragColor = mix(vertcol, vec4(fogColor, 1), fog_int_factor);
 }
 )";
 
@@ -327,6 +326,7 @@ int main()
 
         Entity e_cube_surfrottest = Entity(Transform({5, 4, -4}));
         e_cube_surfrottest.surfaces.push_back(Surface(Transform({1, 1, 1}), &cube));
+        e_cube_surfrottest.surfaces[0].color = {0, 0, 0, 1};
         e_cube_surfrottest.surfaces.push_back(Surface(&cube, &tex_cube));
 
 
@@ -338,21 +338,18 @@ int main()
             eff.SetEffectFloat(AL_EAXREVERB_DENSITY, 1);
             eff.SetEffectFloat(AL_EAXREVERB_DIFFUSION, 0.9);
             eff.SetEffectFloat(AL_EAXREVERB_GAIN, 0.3);
-            eff.SetEffectFloat(AL_EAXREVERB_DECAY_TIME, 3.2);
+            //eff.SetEffectFloat(AL_EAXREVERB_DECAY_TIME, 3.2);
+            eff.SetEffectFloat(AL_EAXREVERB_DECAY_TIME, 5);
             eff.SetEffectFloat(AL_EAXREVERB_DECAY_HFRATIO, 0.7);
             eff.SetEffectFloat(AL_EAXREVERB_ROOM_ROLLOFF_FACTOR, 0.1);
+
+            //eff.SetEffectFloat(AL_EAXREVERB_ECHO_DEPTH, 1);
 
             reverbslot.ApplyEffect(eff);
         }
 
         glm::vec3 v = glm::vec3(1.0f, 0.0f, 0.0f);
         std::cout << Utils::tostring(Utils::angles(v)) << std::endl;
-
-        FogRenderSettings fogs;
-        fogs.fogEnabled = true;
-        fogs.fogColor = glm::vec3(1.0f, 1.0f, 1.0f);
-        fogs.fogStartDistance = 0;
-        fogs.fogEndDistance = 5;
 
         AudioClip testclip = AudioClip();
         if (testclip.LoadFromUCSOUNDFile("test.ucsound")) std::cout << "Successfully loaded sound from \"/test.ucsound\" file!" << std::endl;
@@ -558,6 +555,12 @@ int main()
             }
         };
 
+        FogRenderSettings fogs;
+        fogs.fogEnabled = true;
+        fogs.fogColor = glm::vec3(1.0f, 1.0f, 1.0f);
+        fogs.fogStartDistance = 2;
+        fogs.fogEndDistance = 20;
+
         bool f_pressed = false;
 
         bool lmb_pressed = false;
@@ -671,7 +674,8 @@ int main()
                 if (btn2.IsEnabled() && ams_run_progress < 1) btn2.SetEnabled(false);
                 btn.locked = (ams_run_progress != 0 && ams_run_progress != 1) || btn2.IsEnabled();
                 
-                glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+                //glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+                glClearColor(fogs.fogColor.x, fogs.fogColor.y, fogs.fogColor.z, 1.0f);
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
@@ -689,24 +693,25 @@ int main()
 
                 glm::mat4 view = cam.GetViewMatrix();
                 glm::mat4 proj = cam.GetProjectionMatrix(windowWidth, windowHeight);
+                Transform camt = cam.GetGlobalTransform();
 
-                e.Render(&sp, &view, &proj, &cam.transform, &fogs);
-                e3.Render(&sp, &view, &proj, &cam.transform, &fogs);
-                e4.Render(&sp, &view, &proj, &cam.transform, &fogs);
+                e.Render(&sp, &view, &proj, &camt, &fogs);
+                e3.Render(&sp, &view, &proj, &camt, &fogs);
+                e4.Render(&sp, &view, &proj, &camt, &fogs);
 
-                crowbar.Render(&sp, &view, &proj, &cam.transform, &fogs);
+                crowbar.Render(&sp, &view, &proj, &camt, &fogs);
 
-                e_cube_surfrottest.Render(&sp, &view, &proj, &cam.transform, &fogs);
+                e_cube_surfrottest.Render(&sp, &view, &proj, &camt, &fogs);
 
-                relsys_e_parent.Render(&sp, &view, &proj, &cam.transform, &fogs);
-                relsys_e_child.Render(&sp, &view, &proj, &cam.transform, &fogs);
+                relsys_e_parent.Render(&sp, &view, &proj, &camt, &fogs);
+                relsys_e_child.Render(&sp, &view, &proj, &camt, &fogs);
 
-                btn.Render(&sp, &view, &proj, &cam.transform, &fogs);
-                btn2.Render(&sp, &view, &proj, &cam.transform, &fogs);
+                btn.Render(&sp, &view, &proj, &camt, &fogs);
+                btn2.Render(&sp, &view, &proj, &camt, &fogs);
 
-                maxwellcat.Render(&sp, &view, &proj, &cam.transform, &fogs);
+                maxwellcat.Render(&sp, &view, &proj, &camt, &fogs);
 
-                e2.Render(&sp, &view, &proj, &cam.transform, &fogs);
+                e2.Render(&sp, &view, &proj, &camt, &fogs);
                 
                 glfwSwapBuffers(window);
 
