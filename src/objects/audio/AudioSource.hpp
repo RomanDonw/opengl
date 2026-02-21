@@ -1,0 +1,64 @@
+#ifndef AUDIOSOURCE_HPP
+#define AUDIOSOURCE_HPP
+
+#include "../../openal.hpp"
+
+#include "../Transform.hpp"
+#include "../GameObject.hpp"
+
+enum
+{
+    UNDEFINED = 0,
+    INIT = 1,
+    PLAYING = 2,
+    PAUSED = 3,
+    STOPPED = 4
+} typedef AudioSourceState;
+
+class AudioClip;
+class AudioEffectSlot;
+
+class AudioSource : public GameObject
+{
+    friend class AudioEffectSlot;
+
+    protected:
+        ALuint source;
+        bool looped;
+
+        AudioClip *currclip = nullptr;
+        AudioEffectSlot *attached_slot = nullptr;
+
+        void constructor();
+
+        void updatesrcpos();
+
+        void OnGlobalTransformChanged() override;
+
+    public:
+        const GameObjectType type = AUDIOSOURCE;
+
+        AudioSource(Transform t);
+        AudioSource();
+
+        ~AudioSource() override;
+
+        void SetSourceFloat(ALenum option, float value);
+
+        bool IsLooped();
+        void SetLooping(bool loop);
+
+        AudioSourceState GetState();
+        AudioEffectSlot *GetAttachedSlot();
+
+        //bool CanClipBeChanged();
+        AudioClip *GetCurrentClip();
+        void SetCurrentClip(AudioClip *clip);
+
+        void Play();
+        void Pause();
+        void Stop();
+        void Rewind();
+};
+
+#endif

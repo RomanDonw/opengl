@@ -1,0 +1,7 @@
+#include "objects/audio/AudioClip.hpp"
+#include "objects/audio/AudioSource.hpp"
+#include "objects/audio/AudioListener.hpp"
+#include "objects/audio/AudioEffectProperties.hpp"
+#include "objects/audio/AudioEffectSlot.hpp"
+#include "objects/audio/AudioSystem.hpp"
+#include "objects/audio/AudioDevice.hpp"

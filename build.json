@@ -1,0 +1,71 @@
+{
+    "compiler":
+    {
+        "command": "g++ -std=c++20 -c",
+        "options": "",
+        "include-pathes":
+        [
+            "include"
+        ]
+    },
+    "linker":
+    {
+        "command": "g++ -static-libgcc -static-libstdc++",
+        "options": "",
+        "libraries-pathes":
+        [
+            "lib"
+        ],
+        "static-libraries-files-pathes":
+        [
+            "lib/libglfw3.a",
+            "lib/libglad.a"
+        ],
+        "libraries":
+        [
+            "opengl32",
+            "gdi32",
+            "OpenAL32",
+            "soft_oal"
+        ],
+        "output-file-path": "build/main.exe"
+    },
+    "general":
+    {
+        "temporary-folder": ".tmp",
+        "copy-files":
+        [
+            "lib/soft_oal.dll",
+            "lib/OpenAL32.dll"
+        ],
+        "copy-folders":
+        [
+
+        ],
+        "copy-destination-folder": "build"
+    },
+    "project":
+    {
+        "files":
+        [
+            "src/openal.cpp",
+            "src/utils.cpp",
+
+            "src/objects/ShaderProgram.cpp",
+            "src/objects/Transform.cpp",
+
+            "src/objects/audio/AudioClip.cpp",
+            "src/objects/audio/AudioSource.cpp",
+            "src/objects/audio/AudioListener.cpp",
+            "src/objects/audio/AudioEffectProperties.cpp",
+            "src/objects/audio/AudioEffectSlot.cpp",
+            "src/objects/audio/AudioDevice.cpp",
+            "src/objects/audio/AudioSystem.cpp",
+
+            "src/objects/GameObject.cpp",
+            "src/objects/GameObjectTransform.cpp",
+
+            "src/main.cpp"
+        ]
+    }
+}
