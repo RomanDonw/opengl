@@ -5,22 +5,20 @@
 
 class AudioEffectSlot;
 
-class AudioEffect
+class AudioEffectProperties
 {
+    friend class AudioEffectSlot;
+
     private:
         ALuint effect;
 
-        AudioEffectSlot *attached_slot = nullptr;
-
     public:
-        AudioEffect();
-        ~AudioEffect();
+        AudioEffectProperties();
+        ~AudioEffectProperties();
 
         void SetEffectType(ALenum type);
         void SetEffectFloat(ALenum option, ALfloat value);
-
-        AudioEffectSlot *GetAttachedSlot();
-        void AttachToSlot(AudioEffectSlot *slot);
+        void SetEffectInt(ALenum option, ALint value);
 };
 
 #endif

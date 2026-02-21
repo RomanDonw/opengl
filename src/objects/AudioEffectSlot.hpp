@@ -5,23 +5,24 @@
 
 #include <vector>
 
-class AudioEffect;
+#include "AudioEffectProperties.hpp"
+
 class AudioSource;
 
 class AudioEffectSlot
 {
-    friend class AudioEffect;
     friend class AudioSource;
 
     private:
         ALuint slot;
         
-        AudioEffect *attached_effect = nullptr;
         std::vector<AudioSource *> attached_sources = std::vector<AudioSource *>();
 
     public:
         AudioEffectSlot();
         ~AudioEffectSlot();
+
+        void ApplyEffect(AudioEffectProperties effect);
 
         bool HasAttachedSource(AudioSource *source);
         std::vector<AudioSource *> GetAttachedSources();
