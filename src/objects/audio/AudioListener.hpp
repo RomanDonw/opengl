@@ -1,7 +1,7 @@
 #ifndef AUDIOLISTENER_HPP
 #define AUDIOLISTENER_HPP
 
-#include "GameObject.hpp"
+#include "../GameObject.hpp"
 
 #include <exception>
 #include <string>

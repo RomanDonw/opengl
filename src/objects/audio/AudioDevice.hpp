@@ -1,7 +1,7 @@
 #ifndef AUDIODEVICE_HPP
 #define AUDIODEVICE_HPP
 
-#include "../openal.hpp"
+#include "../../openal.hpp"
 
 class AudioSystem;
 

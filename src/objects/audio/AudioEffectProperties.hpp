@@ -1,7 +1,7 @@
 #ifndef AUDIOEFFECT_HPP
 #define AUDIOEFFECT_HPP
 
-#include "../openal.hpp"
+#include "../../openal.hpp"
 
 class AudioEffectSlot;
 

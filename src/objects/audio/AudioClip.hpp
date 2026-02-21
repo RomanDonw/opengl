@@ -1,7 +1,7 @@
 #ifndef AUDIOCLIP_HPP
 #define AUDIOCLIP_HPP
 
-#include "../openal.hpp"
+#include "../../openal.hpp"
 
 #include <string>
 #include <vector>

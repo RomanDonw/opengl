@@ -1,7 +1,7 @@
 #ifndef AUDIOEFFECTSLOT_HPP
 #define AUDIOEFFECTSLOT_HPP
 
-#include "../openal.hpp"
+#include "../../openal.hpp"
 
 #include <vector>
 

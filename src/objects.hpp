@@ -4,13 +4,7 @@
 #include "objects/Transform.hpp"
 #include "objects/GameObject.hpp"
 
-#include "objects/AudioClip.hpp"
-#include "objects/AudioSource.hpp"
-#include "objects/AudioListener.hpp"
-#include "objects/AudioEffectProperties.hpp"
-#include "objects/AudioEffectSlot.hpp"
-#include "objects/AudioSystem.hpp"
-#include "objects/AudioDevice.hpp"
+#include "audio.hpp"
 
 struct
 {

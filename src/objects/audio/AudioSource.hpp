@@ -1,10 +1,10 @@
 #ifndef AUDIOSOURCE_HPP
 #define AUDIOSOURCE_HPP
 
-#include "../openal.hpp"
+#include "../../openal.hpp"
 
-#include "Transform.hpp"
-#include "GameObject.hpp"
+#include "../Transform.hpp"
+#include "../GameObject.hpp"
 
 enum
 {
