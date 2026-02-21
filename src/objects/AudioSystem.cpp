@@ -38,3 +38,5 @@ void AudioSystem::SetCurrentDevice(AudioDevice *device)
     }
     else alcMakeContextCurrent(NULL);
 }
+
+static void AudioSystem::SetDistanceModel(Alenum model) { alDistanceModel(model); }

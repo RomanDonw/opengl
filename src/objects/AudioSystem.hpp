@@ -15,6 +15,8 @@ class AudioSystem
 
         static AudioDevice *GetCurrentDevice();
         static void SetCurrentDevice(AudioDevice *device);
+
+        static void SetDistanceModel(ALenum model);
 };
 
 #endif
