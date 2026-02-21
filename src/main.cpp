@@ -17,12 +17,6 @@
 #include "glm.hpp"
 #include "openal.hpp"
 
-//#include <json-c/json.h>
-
-//#include <AL/al.h>
-//#include <AL/alc.h>
-
-//#include "utils.hpp"
 #include "objects.hpp"
 
 const char *vertexShaderSource = R"(
@@ -147,42 +141,6 @@ int main()
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    /*ALCdevice *aldev = alcOpenDevice(NULL);
-    if (!aldev)
-    {
-        std::cout << "Failed to open OpenAL device." << std::endl;
-
-        glfwTerminate();
-        return 1;
-    }
-
-    ALCcontext *alctx = alcCreateContext(aldev, NULL);
-    if (!alctx)
-    {
-        std::cout << "Failed to create OpenAL context." << std::endl;
-
-        alcCloseDevice(aldev);
-        glfwTerminate();
-        return 1;
-    }
-    alcMakeContextCurrent(alctx);*/
-
-    //alDistanceModel(AL_LINEAR_DISTANCE_CLAMPED);
-
-    /*if (alcIsExtensionPresent(aldev, "ALC_EXT_EFX") == AL_FALSE)
-    {
-        std::cout << "OpenAL EFX extension doesn't exist." << std::endl;
-        exitcode = 1;
-        goto quit;
-    }
-
-    if (!initEFX())
-    {
-        std::cout << "Failed to initialize OpenAL EFX extension." << std::endl;
-        exitcode = 1;
-        goto quit;
-    }*/
-
     AudioDevice *dev = nullptr;
     try
     {
@@ -204,7 +162,6 @@ int main()
     // ========================================
     
     {
-        //ShaderProgram sp(vertexShaderSource, fragmentShaderSource);
         ShaderProgram sp;
         
         sp.LoadVertexShader(vertexShaderSource);
@@ -367,33 +324,11 @@ int main()
         crowbar.surfaces.push_back(Surface(&crowbar_head, &crowbar_head_tex));
         crowbar.surfaces.push_back(Surface(&crowbar_cyl, &crowbar_cyl_tex));
 
-        //Transform *tr_crowbar_cyl = &crowbar.surfaces[1].transform;
 
         Entity e_cube_surfrottest = Entity(Transform({5, 4, -4}));
         e_cube_surfrottest.surfaces.push_back(Surface(Transform({1, 1, 1}), &cube));
         e_cube_surfrottest.surfaces.push_back(Surface(&cube, &tex_cube));
 
-        //Entity ground = Entity();
-        //ground.surfaces.push_back(Surface(&tex_cube, &cube));
-        //ground.SetScale({5.0f, 1.0f, 5.0f});
-
-        //glm::vec3 scl = ground.GetScale();
-        //AABB ground_coll = AABB({-0.5f * scl.x, -0.5f * scl.y, -0.5f * scl.z}, {0.5f * scl.x, 0.5f * scl.y, 0.5f * scl.z});
-
-        //Entity prop = Entity();
-        //prop.SetPosition({1.0f, 20.0f, 0.0f});
-        //prop.surfaces.push_back(Surface(&tex_cube, &cube));
-
-        //scl = prop.GetScale();
-        //AABB prop_coll = AABB({-0.5f * scl.x, -0.5f * scl.y, -0.5f * scl.z}, {0.5f * scl.x, 0.5f * scl.y, 0.5f * scl.z});
-
-        // ===== ===== MAIN ===== =====
-
-        /*glm::vec3 vel = glm::vec3(0.0f);
-        float mass = 1.0f;
-        float inv_mass;
-        if (mass > 0) inv_mass = 1.0f / mass;
-        else inv_mass = 0;*/
 
         AudioEffectSlot reverbslot = AudioEffectSlot();
         {
@@ -409,16 +344,6 @@ int main()
 
             reverbslot.ApplyEffect(eff);
         }
-
-        /*AudioEffectSlot echoslot = AudioEffectSlot();
-        AudioEffect echoeff = AudioEffect();
-        echoeff.SetEffectType(AL_EFFECT_ECHO);
-        echoeff.AttachToSlot(&echoslot);
-
-        //reverbeff.SetEffectFloat();
-        echoeff.SetEffectFloat(AL_ECHO_DELAY, 0.05);
-        echoeff.SetEffectFloat(AL_ECHO_FEEDBACK, 0);
-        echoeff.SetEffectFloat(AL_ECHO_SPREAD, 0);*/
 
         glm::vec3 v = glm::vec3(1.0f, 0.0f, 0.0f);
         std::cout << Utils::tostring(Utils::angles(v)) << std::endl;
@@ -441,7 +366,6 @@ int main()
 
         source.SetCurrentClip(&testclip);
         source.Play();
-        //source.transform = Transform();
 
 
         Texture maxwellcat_tex = Texture();
@@ -458,8 +382,6 @@ int main()
 
         glm::vec3 maxwellcat_default_scale = glm::vec3(0.05);//glm::vec3(0.0005);
         Entity maxwellcat = Entity(Transform({0, 0, -5}, glm::quat(glm::vec3(0)), maxwellcat_default_scale));
-        /*maxwellcat.surfaces.push_back(Surface(&maxwellcat_bodym, &maxwellcat_bodyt));
-        maxwellcat.surfaces.push_back(Surface(&maxwellcat_whiskersm, &maxwellcat_whiskerst));*/
         maxwellcat.surfaces.push_back(Surface(&maxwellcat_mesh, &maxwellcat_tex));
 
 
@@ -469,7 +391,6 @@ int main()
         AudioSource zapsrc = AudioSource();
         zapsrc.SetParent(&maxwellcat, false);
         reverbslot.AddSource(&zapsrc);
-        //echoslot.AddSource(&zapsrc);
         
         zapsrc.SetLooping(true);
         zapsrc.SetSourceFloat(AL_REFERENCE_DISTANCE, 4);
@@ -477,8 +398,8 @@ int main()
         zapsrc.SetSourceFloat(AL_GAIN, 1.0f);
 
         zapsrc.SetCurrentClip(&zapclip);
-        //zapsrc.Play();
         zapsrc.Pause();
+
 
         AudioClip labdroneclip = AudioClip();
         if (labdroneclip.LoadFromUCSOUNDFile("labdrone2.ucsound")) std::cout << "loaded sound \"/labdrone2.ucsound\"." << std::endl;
@@ -493,7 +414,6 @@ int main()
         labdronesrc.SetSourceFloat(AL_GAIN, 1.0f);
 
         labdronesrc.SetCurrentClip(&labdroneclip);
-        //labdronesrc.Play();
 
 
 
@@ -525,12 +445,6 @@ int main()
         ambsrc.SetSourceFloat(AL_GAIN, 0.3f);
 
 
-        //labdronesrcpitch150.Play();
-
-        //source.SetMaxDistance(2);
-        //source.SetMinGain(0);
-        //source.SetMaxGain(1);
-
         Entity relsys_e_parent = Entity(Transform({-3, 0, 5}));
         relsys_e_parent.surfaces.push_back(Surface(&cube));
         relsys_e_parent.color = {0, 1, 0, 1};
@@ -544,7 +458,6 @@ int main()
         AudioListener listener = AudioListener();
         listener.SetParent(&cam, false);
 
-        //inittestents();
 
         AudioClip button8sfx = AudioClip();
         if (button8sfx.LoadFromUCSOUNDFile("sfx/button/8.ucsound")) std::cout << "loaded \"sfx/button/8.ucsound\"" << std::endl;
@@ -596,19 +509,6 @@ int main()
         Mesh square_button = Mesh();
         if (square_button.LoadFromUCMESHFile("models/buttons/3.ucmesh")) std::cout << "loaded \"/models/buttons/3.ucmesh\"" << std::endl;
 
-        /*
-        Mesh maxwellcat_bodym = Mesh();
-        if (maxwellcat_bodym.LoadFromUCMESHFile("models/maxwellcat/body.ucmesh")) std::cout << "loaded \"/models/maxwellcat/body.ucmesh\"" << std::endl;
-
-        Mesh maxwellcat_whiskersm = Mesh();
-        if (maxwellcat_whiskersm.LoadFromUCMESHFile("models/maxwellcat/whiskers.ucmesh")) std::cout << "loaded \"/models/maxwellcat/whiskers.ucmesh\"" << std::endl;
-
-        Texture maxwellcat_bodyt = Texture();
-        if (maxwellcat_bodyt.LoadFromUCTEXFile("textures/maxwellcat/body.uctex")) printf("loaded \"textures/maxwellcat/body.uctex\"\n");
-
-        Texture maxwellcat_whiskerst = Texture();
-        if (maxwellcat_whiskerst.LoadFromUCTEXFile("textures/maxwellcat/whiskers.uctex")) printf("loaded \"textures/maxwellcat/whiskers.uctex\"\n");*/
-
         HL1ToggleButtonSettings setts;
 
         setts.mesh = &rect_button;
@@ -617,7 +517,6 @@ int main()
         setts.on_texture = &btn4_on;
         setts.off_texture = &btn4_off;
         HL1ToggleButton btn = HL1ToggleButton(Transform({0, 0, -2}, glm::quat(glm::radians(glm::vec3(0, 180, 0)))), setts);
-        //btn.locked = true;
 
         setts.mesh = &square_button;
         setts.interaction_sfx = &button3sfx;
@@ -655,8 +554,6 @@ int main()
                 labdronesrc.Rewind();
                 labdronesrcpitch150.Rewind();
                 
-                //glm::vec3 euler = glm::eulerAngles(maxwellcat.transform.GetRotation());
-                //maxwellcat.transform.SetRotation(glm::quat(glm::vec3(0, euler.y, 0)));
                 maxwellcat.transform.SetScale(maxwellcat_default_scale);
             }
         };
@@ -675,24 +572,6 @@ int main()
             if (delta >= 1.0f / FPS)
             {
                 prev_time = glfwGetTime();
-
-                /*if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-                if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);*/
-
-                /*if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS && !lmb_pressed)
-                {
-                    lmb_pressed = true;
-                    std::cout << "clicked" << std::endl;
-
-                    glfwSetCursorPos(window, lastX, lastY);
-
-                    if (glfwGetInputMode(window, GLFW_CURSOR) == GLFW_CURSOR_NORMAL)
-                    {
-                        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-                    }
-                    else glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-                }
-                else if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_RELEASE && lmb_pressed) lmb_pressed = false;*/
 
                 // ===== CONTROLS =====
                 if (glfwGetInputMode(window, GLFW_CURSOR) != GLFW_CURSOR_NORMAL)
@@ -783,16 +662,9 @@ int main()
                         ams_run_progress = 0;
                         ams_run_step_per_second = 0;
                     }
-
-                    //if ((ams_run_progress >= 4 / AMS_RUN_ANIM_TIME && ams_run_progress < (4 - ams_run_step_per_second) / AMS_RUN_ANIM_TIME) ||\
-                    //    (ams_run_progress >= 8 / AMS_RUN_ANIM_TIME && ams_run_progress < (8 - ams_run_step_per_second) / AMS_RUN_ANIM_TIME))
-                    //{
-                    //    ambsrc.Play();
-                    //}
                 }
 
                 if (ams_run_progress == 0) zapsrc.Pause();
-                //else if (zapsrc.GetState() != PLAYING) zapsrc.Play();
                 else zapsrc.SetSourceFloat(AL_PITCH, ams_run_progress);
 
                 btn2.locked = ams_run_progress != 1;
@@ -802,74 +674,18 @@ int main()
                 glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+
                 maxwellcat.transform.Rotate(glm::vec3(0, ams_run_progress * glm::radians(360.0f * 4 * 4) * delta, glm::radians(45.0f) * delta * (btn2.IsEnabled() ? 1 : 0)));
                 if (btn2.IsEnabled()) maxwellcat.transform.SetScale(maxwellcat_default_scale + maxwellcat_default_scale * glm::vec3(0, glm::sin(glm::radians(90 * glfwGetTime())), 0));
 
-                //tr_crowbar_cyl->Rotate(glm::vec3(glm::radians(360.0f) * delta, 0, 0));
 
                 e_cube_surfrottest.surfaces[0].transform.Rotate(glm::vec3(glm::radians(360.0f) * delta, 0, 0));
                 e_cube_surfrottest.transform.Rotate(glm::vec3(0, glm::radians(90.0f) * delta, 0));
                 e_cube_surfrottest.transform.Translate({0, 0, -1 * delta});
 
-                //source.transform.SetPosition(e_cube_surfrottest.transform.GetPosition());
-
-                //std::cout << source.GetGlobalTransform().ToString() << std::endl;
-
-                //e4.SetRotation(e4.GetRotation() + glm::vec3(0, glm::radians(90.0f) * delta, glm::radians(30.0f) * delta));
-
+                
                 relsys_e_parent.transform.Rotate(glm::quat({0, glm::radians(45.0f) * delta, 0}));
 
-                /*prop.SetPosition(prop.GetPosition() + glm::vec3(0.0f, -5.0f * delta, 0.0f));
-
-                AABB currAABB = prop_coll.Copy();
-                currAABB.Translate(prop.GetPosition());
-
-                std::cout << ground_coll.GetAABBPenetration(&currAABB).y << std::endl;
-                if (currAABB.AABBIntersects(ground_coll)) std::cout << "Intersects!" << std::endl;
-
-                prop.SetPosition(prop.GetPosition() + ground_coll.GetAABBPushForce(&currAABB));*/
-
-                /*AABB currAABB = prop_coll.Copy();
-                currAABB.Translate(prop.GetPosition());
-
-                glm::vec3 pen = ground_coll.GetAABBWeightedPenetration(&currAABB);
-                glm::vec3 pennorm = Utils::normalize(pen);
-
-                glm::vec3 force = glm::vec3(0.0f, -9.8f * mass, 0.0f);
-
-                force -= pennorm * force;
-
-                glm::vec3 accel = force / glm::vec3(mass);
-
-                vel += accel * glm::vec3(delta);
-                vel -= pennorm * vel;
-
-                prop.SetPosition(prop.GetPosition() + vel * glm::vec3(delta) + pen - glm::vec3(0.00001f) * pennorm);
-
-                std::cout << "pennorm Y: " << pennorm.y << ", force Y: " << force.y << ", vel Y: " << vel.y << ", pos Y: " << prop.GetPosition().y << std::endl;*/
-
-                //AABB currAABB = prop_coll.Copy();
-                //currAABB.Translate(prop.GetPosition());
-
-                /*glm::vec3 pen = ground_coll.GetAABBPenetration(&currAABB);
-                glm::vec3 pushDir = Utils::normalize(currAABB.GetCenterOffset() - ground_coll.GetAABBOverlapRegion(&currAABB).GetCenterOffset());
-                
-                glm::vec3 force = glm::vec3(0.0f, -9.8f * mass, 0.0f);
-
-                force -= pushDir * pen;
-
-                glm::vec3 accel = force / glm::vec3(mass);
-
-                vel += accel * glm::vec3(delta);
-                //vel -= vel * pushDir * pen;
-
-                prop.SetPosition(prop.GetPosition() + vel * glm::vec3(delta) + pen);*/
-
-                /*if (ground_coll.AABBIntersects(&currAABB))
-                {
-                    glm::vec3 relvel = vel;
-                    
-                }*/
 
                 glm::mat4 view = cam.GetViewMatrix();
                 glm::mat4 proj = cam.GetProjectionMatrix(windowWidth, windowHeight);
@@ -889,9 +705,6 @@ int main()
                 btn2.Render(&sp, &view, &proj, &cam.transform, &fogs);
 
                 maxwellcat.Render(&sp, &view, &proj, &cam.transform, &fogs);
-
-                //ground.Render(&sp, &view, &proj);
-                //prop.Render(&sp, &view, &proj);
 
                 e2.Render(&sp, &view, &proj, &cam.transform, &fogs);
                 
@@ -924,7 +737,6 @@ int initOpenGL(GLFWwindow **window)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     
-    //GLFWwindow *w = glfwCreateWindow(windowWidth, windowHeight, "OpenGL", NULL, NULL);
     GLFWmonitor *m = glfwGetPrimaryMonitor();
     if (!m)
     {
@@ -935,8 +747,6 @@ int initOpenGL(GLFWwindow **window)
 
     int width, height;
     glfwGetMonitorWorkarea(m, NULL, NULL, &width, &height);
-    /*windowWidth = width;
-    windowHeight = height;*/
 
     GLFWwindow *w = glfwCreateWindow(windowWidth, windowHeight, "OpenGL", NULL/*m*/, NULL);
     if (!window)
