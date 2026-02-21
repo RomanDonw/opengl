@@ -59,6 +59,8 @@
             "src/objects/AudioListener.cpp",
             "src/objects/AudioEffectProperties.cpp",
             "src/objects/AudioEffectSlot.cpp",
+            "src/objects/AudioDevice.cpp",
+            "src/objects/AudioSystem.cpp",
 
             "src/objects/GameObject.cpp",
             "src/objects/GameObjectTransform.cpp",
