@@ -3,21 +3,18 @@
 
 #include "../openal.hpp"
 
-//#include "AudioContext.hpp"
-//#include "AudioDevice.hpp"
-
-
+#include "AudioDevice.hpp"
 
 class AudioSystem
 {
     private:
-        static AudioDevice *device = nullptr;
+        static AudioDevice *currdev;
 
     public:
         AudioSystem() = delete;
 
         static AudioDevice *GetCurrentDevice();
-        static void SetCurrentDevice(AudioDevice *dev);
+        static void SetCurrentDevice(AudioDevice *device);
 };
 
 #endif
