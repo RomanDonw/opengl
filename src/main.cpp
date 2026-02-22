@@ -13,6 +13,8 @@
 
 #include <csignal>
 
+#include <Jolt/Jolt.h>
+
 #include "opengl.hpp"
 #include "glm.hpp"
 #include "openal.hpp"
