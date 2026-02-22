@@ -3,13 +3,20 @@
 
 #include "../opengl.hpp"
 
+#include <vector>
 #include <string>
+
+class Surface;
 
 class Texture
 {
+    friend class Surface;
+
     private:
         bool hasTexture = false;
         GLuint texture;
+
+        std::vector<Surface *> attached_surfaces = std::vector<Surface *>();
 
     public:
         Texture();

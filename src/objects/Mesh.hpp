@@ -9,60 +9,66 @@
 
 #include "Transform.hpp"
 
+class Surface;
+
 class Mesh
 {
-  private:
-    std::vector<glm::vec3> vertices;
-    std::vector<unsigned int> indices;
-    std::vector<glm::vec2> uvs;
+    friend class Surface;
 
-    bool hasbuffers = false;
-    GLuint VAO, VBO_VERTEX, VBO_UV, EBO;
+    private:
+        std::vector<glm::vec3> vertices;
+        std::vector<unsigned int> indices;
+        std::vector<glm::vec2> uvs;
 
-  public:
-    Mesh(std::vector<glm::vec3> _vertices, std::vector<unsigned int> _indices, std::vector<glm::vec2> _uvs);
-    Mesh();
+        bool hasbuffers = false;
+        GLuint VAO, VBO_VERTEX, VBO_UV, EBO;
 
-    ~Mesh();
+        std::vector<Surface *> attached_surfaces = std::vector<Surface *>();
 
-    //Mesh Copy() { return *this; }
+    public:
+        Mesh(std::vector<glm::vec3> _vertices, std::vector<unsigned int> _indices, std::vector<glm::vec2> _uvs);
+        Mesh();
 
-    void ClearVertices();
-    void ClearIndices();
-    void ClearUVs();
-    void ClearMesh();
+        ~Mesh();
 
-    void AddVertexWithUV(glm::vec3 vertex, glm::vec2 uv);
-    void AddVertexWithUV(float x, float y, float z, float u, float v);
+        //Mesh Copy() { return *this; }
 
-    void AddTriangle(unsigned int v0, unsigned int v1, unsigned int v2);
+        void ClearVertices();
+        void ClearIndices();
+        void ClearUVs();
+        void ClearMesh();
 
-    /*
-    Vertices sequence:
+        void AddVertexWithUV(glm::vec3 vertex, glm::vec2 uv);
+        void AddVertexWithUV(float x, float y, float z, float u, float v);
 
-        v0 ... v1
-        .       .
-        .       .
-        v3 ... v2
+        void AddTriangle(unsigned int v0, unsigned int v1, unsigned int v2);
 
-    */
-    void AddQuad(unsigned int v0, unsigned int v1, unsigned int v2, unsigned int v3);
+        /*
+        Vertices sequence:
 
-    std::vector<glm::vec3> GetVertices();
-    std::vector<unsigned int> GetIndices();
-    size_t GetIndicesCount();
-    std::vector<glm::vec2> GetUVs();
+            v0 ... v1
+            .       .
+            .       .
+            v3 ... v2
 
-    bool HasBuffers();
-    bool GenerateBuffers();
-    bool DeleteBuffers();
-    void RegenerateBuffers();
+        */
+        void AddQuad(unsigned int v0, unsigned int v1, unsigned int v2, unsigned int v3);
 
-    void ApplyTransformation(glm::mat4 mat);
-    void ApplyTransformation(Transform t);
+        std::vector<glm::vec3> GetVertices();
+        std::vector<unsigned int> GetIndices();
+        size_t GetIndicesCount();
+        std::vector<glm::vec2> GetUVs();
 
-    bool LoadFromUCMESHFile(std::string filename);
-    bool RenderMesh();
+        bool HasBuffers();
+        bool GenerateBuffers();
+        bool DeleteBuffers();
+        void RegenerateBuffers();
+
+        void ApplyTransformation(glm::mat4 mat);
+        void ApplyTransformation(Transform t);
+
+        bool LoadFromUCMESHFile(std::string filename);
+        bool RenderMesh();
 };
 
 #endif

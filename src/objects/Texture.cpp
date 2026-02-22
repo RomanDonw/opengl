@@ -1,11 +1,18 @@
 #include "Texture.hpp"
 
-#include <vector>
 #include <filesystem>
 #include <cstring>
+#include <iterator>
+
+#include "Surface.hpp"
 
 Texture::Texture() {}
-Texture::~Texture() { DeleteTexture(); }
+Texture::~Texture()
+{
+    for (Surface *surface : attached_surfaces) surface->SetTexture(nullptr);
+
+    DeleteTexture();
+}
 
 bool Texture::HasTexture() { return hasTexture; }
 bool Texture::BindTexture()

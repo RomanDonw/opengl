@@ -1,5 +1,9 @@
 #include "Surface.hpp"
 
+#include <vector>
+#include <iterator>
+#include <algorithm>
+
 Surface::Surface(Transform tr, Texture *t, Mesh *m, FaceCullingType c)
 {
     SetTexture(t);
@@ -74,7 +78,11 @@ Surface::Surface(Mesh *m)
     SetMesh(m);
 }
 
-Surface::~Surface() {}
+Surface::~Surface()
+{
+    SetTexture(nullptr);
+    SetMesh(nullptr);
+}
 
 /*
 Surface Copy()
@@ -88,10 +96,18 @@ Mesh *Surface::GetMesh() { return mesh; }
 
 void Surface::SetTexture(Texture *t)
 {
+    //texture = t;
+    if (texture) texture->attached_surfaces.erase(std::remove(texture->attached_surfaces.begin(), texture->attached_surfaces.end(), this), texture->attached_surfaces.end());
+    if (t) t->attached_surfaces.push_back(this);
+
     texture = t;
 }
 
 void Surface::SetMesh(Mesh *m)
 {
+    //mesh = m;
+    if (mesh) mesh->attached_surfaces.erase(std::remove(mesh->attached_surfaces.begin(), mesh->attached_surfaces.end(), this), mesh->attached_surfaces.end());
+    if (m) m->attached_surfaces.push_back(this);
+
     mesh = m;
 }

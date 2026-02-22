@@ -2,8 +2,9 @@
 
 #include <cstring>
 #include <filesystem>
+#include <iterator>
 
-
+#include "Surface.hpp"
 
 struct
 {
@@ -21,8 +22,6 @@ struct
     unsigned int v0, v1, v2, v3;
 } typedef UCMESHQuadInfo;
 
-
-
 Mesh::Mesh(std::vector<glm::vec3> _vertices, std::vector<unsigned int> _indices, std::vector<glm::vec2> _uvs)
 {
     vertices = _vertices;
@@ -36,9 +35,10 @@ Mesh::Mesh() {}
 
 Mesh::~Mesh()
 {
+    for (Surface *surface : attached_surfaces) surface->SetMesh(nullptr);
+
     DeleteBuffers();
 }
-
 
 void Mesh::ClearVertices()
 {
@@ -65,18 +65,13 @@ void Mesh::ClearMesh()
     ClearUVs();
 }
 
-
 void Mesh::AddVertexWithUV(glm::vec3 vertex, glm::vec2 uv)
 {
     vertices.push_back(vertex);
     uvs.push_back(uv);
 }
 
-void Mesh::AddVertexWithUV(float x, float y, float z, float u, float v)
-{
-    AddVertexWithUV(glm::vec3(x, y, z), glm::vec2(u, v));
-}
-
+void Mesh::AddVertexWithUV(float x, float y, float z, float u, float v) { AddVertexWithUV(glm::vec3(x, y, z), glm::vec2(u, v)); }
 
 void Mesh::AddTriangle(unsigned int v0, unsigned int v1, unsigned int v2)
 {
@@ -157,10 +152,7 @@ void Mesh::ApplyTransformation(glm::mat4 mat)
     }
 }
 
-void Mesh::ApplyTransformation(Transform t)
-{
-    ApplyTransformation(t.GetTransformationMatrix());
-}
+void Mesh::ApplyTransformation(Transform t) { ApplyTransformation(t.GetTransformationMatrix()); }
 
 bool Mesh::LoadFromUCMESHFile(std::string filename)
 {
