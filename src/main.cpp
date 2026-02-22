@@ -178,7 +178,6 @@ int main()
         // ===== MESHES =====
         
         Mesh tri = Mesh();
-        tri.LockBuffers();
         
         tri.AddVertexWithUV(-0.5, -0.5, 0.0, 0.0, 0.0);
         tri.AddVertexWithUV(-0.5, 0.5, 0.0, 0.0, 1.0);
@@ -188,10 +187,8 @@ int main()
         tri.AddTriangle(0, 2, 3);
 
         tri.GenerateBuffers();
-        tri.UnlockBuffers();
 
         Mesh cube = Mesh();
-        cube.LockBuffers();
 
         cube.AddVertexWithUV(-0.5, -0.5, -0.5, 0 / 4.0f, 1 / 2.0f); // 0
         cube.AddVertexWithUV(0.5, -0.5, -0.5, 1 / 4.0f, 1 / 2.0f); // 1
@@ -238,7 +235,6 @@ int main()
         cube.AddTriangle(13, 15, 14);
 
         cube.GenerateBuffers();
-        cube.UnlockBuffers();
 
         Mesh crowbar_head = Mesh();
         if (crowbar_head.LoadFromUCMESHFile("./models/crowbar/head.ucmesh"))

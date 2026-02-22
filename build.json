@@ -67,6 +67,7 @@
             "src/objects/GameObjectTransform.cpp",
 
             "src/objects/Texture.cpp",
+            "src/objects/Mesh.cpp",
 
             "src/main.cpp"
         ]
