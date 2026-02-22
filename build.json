@@ -68,6 +68,7 @@
 
             "src/objects/Texture.cpp",
             "src/objects/Mesh.cpp",
+            "src/objects/Surface.cpp",
 
             "src/main.cpp"
         ]

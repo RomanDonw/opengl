@@ -6,64 +6,10 @@
 
 #include "objects/Texture.hpp"
 #include "objects/Mesh.hpp"
+#include "objects/Surface.hpp"
 
 #include "audio.hpp"
 
-enum
-{
-    NoCulling = 0,
-    BackFace = 1,
-    FrontFace = 2,
-    BothFaces = 3
-} typedef FaceCullingType;
-
-class Surface
-{
-  private:
-    Texture *texture = nullptr;
-    Mesh *mesh = nullptr;
-    FaceCullingType culling = BackFace;
-
-  public:
-    Transform transform = Transform();
-    glm::vec4 color = glm::vec4(1.0f);
-    bool enableRender = true;
-
-    Surface(Transform tr, Texture *t, Mesh *m, FaceCullingType c)
-    { transform = tr; texture = t; mesh = m; culling = c; }
-    Surface(Texture *t, Mesh *m, FaceCullingType c)
-    { texture = t; mesh = m; culling = c; }
-
-    Surface(Transform tr, Mesh *m, Texture *t, FaceCullingType c)
-    { transform = tr; texture = t; mesh = m; culling = c; }
-    Surface(Mesh *m, Texture *t, FaceCullingType c)
-    { texture = t; mesh = m; culling = c; }
-
-    Surface(Transform tr, Texture *t, Mesh *m)
-    { transform = tr; texture = t; mesh = m; }
-    Surface(Texture *t, Mesh *m)
-    { texture = t; mesh = m; }
-
-    Surface(Transform tr, Mesh *m, Texture *t)
-    { transform = tr; texture = t; mesh = m; }
-    Surface(Mesh *m, Texture *t)
-    { texture = t; mesh = m; }
-
-    Surface(Transform tr, Mesh *m) { transform = tr; mesh = m; }
-    Surface(Mesh *m) { mesh = m; }
-
-    ~Surface() {}
-
-    inline Surface Copy() { return *this; }
-
-    inline Texture *GetTexture() { return texture; }
-    inline Mesh *GetMesh() { return mesh; }
-    inline FaceCullingType GetFaceCullingType() { return culling; }
-
-    inline void SetTexture(Texture *t) { texture = t; }
-    inline void SetMesh(Mesh *m) { mesh = m; }
-    inline void SetFaceCullingType(FaceCullingType c) { culling = c; }
-};
 
 /*
 class AABB
@@ -157,7 +103,7 @@ class Entity : public GameObject
 
     ~Entity() {}
 
-    void Render(ShaderProgram *sp, glm::mat4 *view, glm::mat4 *projection, Transform *cameraTransform, FogRenderSettings *fogRenderSettings)
+    void Render(ShaderProgram *sp, const glm::mat4 *view, const glm::mat4 *projection, Transform *cameraTransform, const FogRenderSettings *fogRenderSettings)
     {
         if (!enableRender) return;
 
@@ -187,15 +133,14 @@ class Entity : public GameObject
 
             Texture *texture = surface.GetTexture();
             Mesh *mesh = surface.GetMesh();
-            FaceCullingType culling = surface.GetFaceCullingType();
-            if (!(mesh && mesh->HasBuffers() && culling != BothFaces)) continue;
+            if (!(mesh && mesh->HasBuffers() && surface.culling != BothFaces)) continue;
 
-            if (culling == NoCulling) glDisable(GL_CULL_FACE);
+            if (surface.culling == NoCulling) glDisable(GL_CULL_FACE);
             else
             {
                 glEnable(GL_CULL_FACE);
 
-                switch (culling)
+                switch (surface.culling)
                 {
                     case BackFace:
                         glCullFace(GL_BACK);
@@ -214,7 +159,6 @@ class Entity : public GameObject
             }
             else sp->SetUniformInteger("hasTexture", GL_FALSE);
 
-            //sp->SetUniformMatrix4x4("model", GetParentGlobalTransform().GetTransformationMatrix() * transform.GetTransformationMatrix() * surface.transform.GetTransformationMatrix());
             sp->SetUniformMatrix4x4("model", GetGlobalTransform().GetTransformationMatrix() * surface.transform.GetTransformationMatrix());
             sp->SetUniformVector4("color", color * surface.color);
 
