@@ -1,10 +1,10 @@
 #ifndef SHADERPROGRAM_HPP
 #define SHADERPROGRAM_HPP
 
-#include <string>
-
 #include "../opengl.hpp"
 #include "../glm.hpp"
+
+#include <string>
 
 class ShaderProgram
 {

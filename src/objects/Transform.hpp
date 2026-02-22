@@ -1,17 +1,12 @@
 #ifndef TRANSFORM_HPP
 #define TRANSFORM_HPP
 
-#include "../utils.hpp"
 #include "../glm.hpp"
 
 #include <string>
 
-//class GameObjectTransform;
-
 class Transform
 {
-    //friend class GameObjectTransform;
-
     protected:
         glm::vec3 position = glm::vec3(0.0f);
         glm::quat rotation = glm::quat(glm::vec3(0, 0, 0));

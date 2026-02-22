@@ -1,10 +1,10 @@
 #ifndef GAMEOBJECT_HPP
 #define GAMEOBJECT_HPP
 
-#include <vector>
-//#include <unordered_set>
-
 #include "../glm.hpp"
+
+#include <vector>
+
 #include "Transform.hpp"
 #include "GameObjectTransform.hpp"
 
