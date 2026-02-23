@@ -8,6 +8,7 @@
 #include "objects/Mesh.hpp"
 #include "objects/Surface.hpp"
 #include "objects/Entity.hpp"
+#include "objects/Camera.hpp"
 
 #include "audio.hpp"
 
@@ -81,44 +82,3 @@ class AABB
         return p * glm::vec3(0.0f, Utils::sign(a_center.z - b_center.z), 0.0f);
     }
 };*/
-
-class Camera : public GameObject
-{
-  private:
-    float neardist = 0.05;//0.1;
-    float fardist = 1000;
-    float fov = glm::radians(60.0f);
-    
-  public:
-    const GameObjectType type = CAMERA;
-
-    Camera(float _fov, float _neardist, float _fardist) : GameObject()
-    {
-        fov = _fov;
-        neardist = _neardist;
-        fardist = _fardist;
-    }
-
-    Camera(float _neardist, float _fardist) : GameObject()
-    {
-        neardist = _neardist;
-        fardist = _fardist;
-    }
-
-    Camera(float _fov) : GameObject() { fov = _fov; }
-
-    Camera() : GameObject() {}
-
-    inline float GetNearDistance() { return neardist; }
-    inline float GetFarDistance() { return fardist; }
-    inline float GetFOV() { return fov; }
-
-    inline void SetNearDistance(float _neardist) { neardist = _neardist; }
-    inline void SetFarDistance(float _fardist) { fardist = _fardist; }
-    inline void SetFOV(float _fov) { fov = _fov; }
-
-    inline glm::mat4 GetViewMatrix()
-    { return glm::lookAt(transform.GetPosition(), transform.GetPosition() + transform.GetFront(), transform.GetUp()); }
-    inline glm::mat4 GetProjectionMatrix(unsigned int screen_width, unsigned int screen_height)
-    { return glm::perspective(fov, (float)screen_width / (float)screen_height, neardist, fardist); }
-};

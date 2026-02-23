@@ -70,6 +70,7 @@
             "src/objects/Mesh.cpp",
             "src/objects/Surface.cpp",
             "src/objects/Entity.cpp",
+            "src/objects/Camera.cpp",
 
             "src/main.cpp"
         ]
