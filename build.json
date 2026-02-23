@@ -19,7 +19,8 @@
         "static-libraries-files-pathes":
         [
             "lib/libglfw3.a",
-            "lib/libglad.a"
+            "lib/libglad.a",
+            "lib/libreactphysics3d.a"
         ],
         "libraries":
         [

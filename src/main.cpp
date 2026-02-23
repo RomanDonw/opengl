@@ -10,12 +10,12 @@
 #include <algorithm>
 #include <functional>
 #include <cstdlib>
-
 #include <csignal>
 
 #include "opengl.hpp"
 #include "glm.hpp"
 #include "openal.hpp"
+#include "physics.hpp"
 
 #include "objects.hpp"
 
