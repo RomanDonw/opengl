@@ -26,8 +26,7 @@
             "opengl32",
             "gdi32",
             "OpenAL32",
-            "soft_oal",
-            "Jolt"
+            "soft_oal"
         ],
         "output-file-path": "build/main.exe"
     },
